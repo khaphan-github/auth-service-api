@@ -4,7 +4,7 @@ const connectionString = 'postgres://fueitupq:sMOdoNC9YcDJvQ--LhNdYwVQ7nWLcxYI@r
 
 const PostgreDatabase = () => {
     const client = new Client(connectionString);
-    client.connect((err) => {
+    client.connect((err: { stack: any; }) => {
         if (err) {
           console.error('connection error', err.stack)
         } else {
