@@ -4,6 +4,11 @@ import dotenv from 'dotenv';
 
 const app: Application = express();
 
+const compression = require("compression");
+app.use(compression());
+
+const helmet = require("helmet");
+app.use(helmet());
 // Use morgan
 const morgan = require('morgan');
 app.use(morgan('combined'));
