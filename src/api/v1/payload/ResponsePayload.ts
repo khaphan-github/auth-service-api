@@ -12,6 +12,7 @@ export interface ResponsePayload {
 export enum ResponseStatus {
     SUCCESS = 'SUCCESS',
     FAILURE = 'FAILURE',
+    CREATED = 'CREATED',
     ERROR = 'ERROR',
     TIMEOUT = 'TIMEOUT',
     WRONG_FORMAT = 'WRONG_FORMAT',
