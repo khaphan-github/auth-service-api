@@ -1,9 +1,39 @@
-const saveRSAKeypair = require('../repository/security.repository');
+import console = require('console');
+import { NextFunction } from 'express';
+import NodeRSA = require('node-rsa');
+import { IRSAKeypair, IRSAKeypairModel } from '../model/rsakeypair.model';
+import { ClientKey } from '../payload/request/ClientKey';
+import { getPublicKeyByClient, getRSAPrivateKey, saveRSAKeypair } from '../repository/security.repository';
 
 export const generateKey = () => {
+    const keys = new NodeRSA({ b: 1024 });
+    const publicKey = keys.exportKey('public');
+    const privateKey = keys.exportKey('private');
 
+    return {
+        publicKey: publicKey,
+        privateKey: privateKey
+    };
+}
+export const resDecript = (data: string, key: string) => {
+    let keyPrivate = new NodeRSA(key);
+    let decrypted = keyPrivate.decrypt(data, 'utf8');
+    return decrypted;
 }
 
-export const getKey = () => {
-    return "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC3/FZgXeh2txTYkhAbUfdR7q16TK2mWfDIVt/ufQ2Z4CwnFq6dFe1CdVN7pg8VUzwlm4EsH0IC8JpdbVD3fa9Q5ZlmhY4NnVYRJQWcDEcApFxUEdKSPzraGLd04+UYylDKRduyZEL0CTbmfUaXJ7YbNxrZ11oJRwVtBlThfij+YwIDAQAB";
+export const saveNewRSAKeypair = (_client: ClientKey, publicKey: string, privateKey: string) => {
+    const keyStore: IRSAKeypair = {
+        clientId: _client.clientId,
+        clientSecret: _client.clientSecret,
+        initTime: new Date,
+        publicKey: publicKey,
+        privateKey: privateKey
+    }
+    saveRSAKeypair(keyStore);
+}
+
+export const initKeyPair = (_client: ClientKey): string => {
+    const keys = generateKey();
+    saveNewRSAKeypair(_client, keys.publicKey, keys.privateKey);
+    return keys.publicKey;
 }
