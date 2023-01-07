@@ -1,4 +1,4 @@
 export interface ClientKey {
-    clientID: string;
+    clientId: string;
     clientSecret: string;
 }
