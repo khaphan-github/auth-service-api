@@ -1,7 +1,8 @@
 const saveRSAKeypair = require('../repository/security.repository');
+import NodeRSA = require('node-rsa');
 
 export const generateKey = () => {
-
+    // then store db;
 }
 
 export const getKey = () => {
