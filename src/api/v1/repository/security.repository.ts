@@ -1,5 +1,5 @@
-import RSAKeypair, { IRSAKeypair, IRSAKeypairModel } from "../model/rsakeypair.model";
-import { ClientKey } from "../payload/request/ClientKey";
+import RSAKeypair, { IRSAKeypair } from "../model/rsakeypair.model";
+import { ClientKey } from "../payload/request/clientkey.req";
 import mongoose from 'mongoose';
 
 export const saveRSAKeypair = (rsaKeypair: IRSAKeypair) => {
@@ -22,23 +22,15 @@ export const saveRSAKeypair = (rsaKeypair: IRSAKeypair) => {
         })
 }
 
-export const getRSAPrivateKey = (_publicKey: string): string => {
-    let privateKey = '';
-    RSAKeypair.findOne({
-        publicKey: _publicKey // search query
-    })
-        .then((keypair) => {
-            if (keypair) privateKey = keypair.privateKey;
-        })
-        .catch((error) => {
-            console.error(error);
-        });
-    return privateKey;
-}
-
 export const getPublicKeyByClient = (_client: ClientKey) => {
     return RSAKeypair.findOne({
         clientId: _client.clientId,
         clientSecret: _client.clientSecret
+    });
+}
+
+export const getPrivateByPublickey = (publicKey: string) => {
+    return RSAKeypair.findOne({
+        publicKey: publicKey
     });
 }

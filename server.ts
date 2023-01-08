@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import { serverConfig } from './src/config/serverConfig';
 import mongoose from 'mongoose';
 import securityRoute from './src/api/v1/route/security.route';
+import userRoute from './src/api/v1/route/user.route';
 
 const server: Application = express();
 export const routes = express.Router();
@@ -52,6 +53,7 @@ const StartServer = () => {
 
   server.use(serverConfig.api.path, routes);
   routes.use(securityRoute);
+  routes.use(userRoute);
 
   // Start server
   const port = serverConfig.server.port;
