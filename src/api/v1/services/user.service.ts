@@ -1,10 +1,10 @@
 import { Response } from "express";
-import { decryptUsernamePassword } from "../../../lib/rsa";
+import { decryptUsernamePassword } from "../../../lib/rsa.lib";
 import { IUser } from "../model/user.model";
 import { UserReq } from "../payload/request/user.req";
 import { getPrivateByPublickey } from "../repository/security.repository";
 import { saveUser } from "../repository/user.repository";
-import { BcriptHash } from "../../../lib/hash";
+import { BcriptHash } from "../../../lib/hash.lib";
 export const handleUserRegister = (user: UserReq, res: Response) => {
     // verify otp by email;
     getPrivateByPublickey(user.publicKey).then((keypair) => {

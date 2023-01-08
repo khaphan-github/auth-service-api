@@ -39,5 +39,8 @@ export const serverConfig = {
     accesskey: JWT_ACCESS_SECRET,
     refreshkey: JWT_REFRESH_SECRET,
     expriseTime: JWT_EXPIRE_TIME
+  },
+  memoryCache: {
+    
   }
 }
