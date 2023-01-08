@@ -12,10 +12,10 @@ export interface IRSAKeypairModel extends IRSAKeypair, Document {}
 
 const RSAKeypairSchema: Schema = new Schema(
     {
-        clientId: { type: String, required: true },
-        clientSecret: { type: String, required: true },
-        publicKey: { type: String, required: true },
-        privateKey: { type: String, required: true },
+        clientId: { type: String, required: true, unique: true },
+        clientSecret: { type: String, required: true, unique: true },
+        publicKey: { type: String, required: true, unique: true },
+        privateKey: { type: String, required: true, unique: true },
         initTime: { type: Date, required: true },
     },
     {

@@ -1,8 +1,10 @@
 import express from 'express';
-import { getPublickey } from '../controller/security.controller';
+import { SecurityController } from '../controller/security.controller';
+import { appClientAuthFillter } from '../middleware/authentication.middleware';
 
 const securityRoute = express.Router();
 
-securityRoute.post('/publickey', getPublickey);
+securityRoute.post('/app-client/oauth', SecurityController.appClientAuthenticate);
+securityRoute.post('/user/oauth', appClientAuthFillter, SecurityController.userAuthenticate);
 
 export = securityRoute;
