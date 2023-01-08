@@ -20,8 +20,6 @@ export interface Publickey {
     method: HttpMethod;
     type: ContextType
 }
-
-
 export enum HttpMethod {
     GET = 'GET', POST = 'POST', PUT = 'PUT', DELETE = 'DELETE', PATCH = 'PATCH'
 }
@@ -36,7 +34,7 @@ export const responseClientApplicationOauth =
             publicKey: publicKey,
             method: HttpMethod.POST,
             type: ContextType.APPLICATIONJSON,
-            href: serverConfig.api.path + '/oauth'
+            href: serverConfig.api.path + '/user/oauth'
         }
         const tokenRes: Token = {
             accessToken: accessToken,
