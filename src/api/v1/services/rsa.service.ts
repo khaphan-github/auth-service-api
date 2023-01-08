@@ -1,7 +1,6 @@
 import { Response } from 'express';
-import { CacheContainer } from 'node-ts-cache';
-import { MemoryStorage } from 'node-ts-cache-storage-memory';
-import { decryptUsernamePassword, generateKey } from '../../../lib/rsa';
+import { memCache } from '../../../lib/cache.lib';
+import { decryptUsernamePassword, generateKey } from '../../../lib/rsa.lib';
 import { IRSAKeypair } from '../model/rsakeypair.model';
 import { ClientAccount } from '../payload/request/clientaccount.req';
 import { ClientKey } from '../payload/request/clientkey.req';
@@ -29,8 +28,6 @@ export const initKeyPair = (_client: ClientKey): string => {
     saveNewRSAKeypair(_client, keys.publicKey, keys.privateKey);
     return keys.publicKey;
 }
-const clientOauthResponseCache = new CacheContainer(new MemoryStorage());
-
 export const handleAppClientAuthenticate = async (_client: ClientKey, res: Response) => {
     const isRightClient = Validation.isRightClient(_client);
     if (!isRightClient) {
@@ -42,8 +39,7 @@ export const handleAppClientAuthenticate = async (_client: ClientKey, res: Respo
         res.status(200).json({ _response });
         return;
     }
-    const cachedRes = await clientOauthResponseCache.getItem<any>("oauthResponse");
-
+   const cachedRes = await memCache.getItemFromResponseCacheBy('oauthResponse');
     if (cachedRes) {
         res.json(cachedRes).status(200);
         return;
@@ -58,9 +54,10 @@ export const handleAppClientAuthenticate = async (_client: ClientKey, res: Respo
                 , accesstoken, refreshToken);
             res.json(_response).status(200);
 
-            await clientOauthResponseCache.setItem("oauthResponse", _response, { ttl: 60 })
+            await memCache.setItemFromResponseCacheBy("oauthResponse", _response, 60);
         }
         else {
+            await memCache.invalidResponseCacheBy();
             const newPublicKey = initKeyPair(_client);
             res.json(responseClientApplicationOauth(newPublicKey
                 , '', '')).status(201);
