@@ -23,10 +23,10 @@ export const saveNewRSAKeypair = (_client: ClientKey, publicKey: string, private
     saveRSAKeypair(keyStore);
 }
 
-export const initKeyPair = (_client: ClientKey): string => {
+export const initKeyPair = (_client: ClientKey) => {
     const keys = generateKey();
     saveNewRSAKeypair(_client, keys.publicKey, keys.privateKey);
-    return keys.publicKey;
+    return keys;
 }
 
 export const handleAppClientAuthenticate = async (_client: ClientKey, res: Response) => {
@@ -51,8 +51,11 @@ export const handleAppClientAuthenticate = async (_client: ClientKey, res: Respo
         }
         else {
             await MemCache.invalidCacheBy();
-            const newPublicKey = initKeyPair(_client);
-            return res.json(responseClientApplicationOauth(newPublicKey)).status(201);
+            const newKeys = initKeyPair(_client);
+            await MemCache.setItemFromCacheBy(CACHENAME.PUBLICKEY, newKeys.publicKey, 6000);
+            await MemCache.setItemFromCacheBy(CACHENAME.PRIVATEKEY, newKeys.privateKey, 6000);
+            
+            return res.json(responseClientApplicationOauth(newKeys.publicKey)).status(201);
         }
     }).catch((err) => {
         const _response = ResponseBase(ResponseStatus.FAILURE, 'Server error when call database', err.message);
