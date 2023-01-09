@@ -1,16 +1,16 @@
 import { Response } from 'express';
-import { memCache } from '../../../lib/cache.lib';
+import { CACHENAME, MemCache } from '../../../lib/cache.lib';
+import { BcriptCompare } from '../../../lib/hash.lib';
 import { decryptUsernamePassword, generateKey } from '../../../lib/rsa.lib';
 import { IRSAKeypair } from '../model/rsakeypair.model';
 import { ClientAccount } from '../payload/request/clientaccount.req';
 import { ClientKey } from '../payload/request/clientkey.req';
-import { responseClientApplicationOauth } from '../payload/Res/clientOauth.res';
-import { ResponseBase, ResponseStatus } from '../payload/response.payload';
-import { getPrivateByPublickey, getPublicKeyByClient, saveRSAKeypair } from '../repository/security.repository';
-import { getUserByUsernameAndPassword } from '../repository/user.repository';
+import { responseClientApplicationOauth, responseUserToken } from '../payload/Res/clientOauth.res';
+import { ResponseBase, ResponseStatus } from '../payload/Res/response.payload';
+import { getPublicKeyByClient, getRSAKeypair, saveRSAKeypair } from '../repository/security.repository';
+import { getUserByUsername } from '../repository/user.repository';
 import { Validation } from '../validations/client.validate';
-import { createAccessToken, initRefreshToken } from './jwt.service';
-
+import { createAccessToken, handleIsExistRefreshToken, initRefreshToken, isExistRefreshToken } from './jwt.service';
 
 export const saveNewRSAKeypair = (_client: ClientKey, publicKey: string, privateKey: string) => {
     const keyStore: IRSAKeypair = {
@@ -23,92 +23,90 @@ export const saveNewRSAKeypair = (_client: ClientKey, publicKey: string, private
     saveRSAKeypair(keyStore);
 }
 
-export const initKeyPair = (_client: ClientKey): string => {
+export const initKeyPair = (_client: ClientKey) => {
     const keys = generateKey();
     saveNewRSAKeypair(_client, keys.publicKey, keys.privateKey);
-    return keys.publicKey;
+    return keys;
 }
+
 export const handleAppClientAuthenticate = async (_client: ClientKey, res: Response) => {
     const isRightClient = Validation.isRightClient(_client);
+
     if (!isRightClient) {
-        const _response =
-            ResponseBase(
-                ResponseStatus.FAILURE,
-                'client_is_not_exist',
-                undefined);
-        res.status(200).json({ _response });
-        return;
+        const _response = ResponseBase(ResponseStatus.FAILURE, 'Client is not exist', undefined);
+        return res.status(200).json({ _response });
     }
-   const cachedRes = await memCache.getItemFromResponseCacheBy('oauthResponse');
-    if (cachedRes) {
-        res.json(cachedRes).status(200);
-        return;
+
+    const publicKeyCache = await MemCache.getItemFromCacheBy(CACHENAME.PUBLICKEY);
+    if (publicKeyCache) {
+        const _response = responseClientApplicationOauth(publicKeyCache);
+        return res.json(_response).status(200);
     }
 
     getPublicKeyByClient(_client).then(async (results) => {
         if (results) {
-            const accesstoken = createAccessToken(results.id);
-            const refreshToken = initRefreshToken(results.id);
-            const _response = responseClientApplicationOauth(
-                results.publicKey
-                , accesstoken, refreshToken);
-            res.json(_response).status(200);
-
-            await memCache.setItemFromResponseCacheBy("oauthResponse", _response, 60);
+            const _response = responseClientApplicationOauth(results.publicKey);
+            await MemCache.setItemFromCacheBy(CACHENAME.PUBLICKEY, results.publicKey, 60);
+            return res.json(_response).status(200);
         }
         else {
-            await memCache.invalidResponseCacheBy();
-            const newPublicKey = initKeyPair(_client);
-            res.json(responseClientApplicationOauth(newPublicKey
-                , '', '')).status(201);
+            await MemCache.invalidCacheBy();
+            const newKeys = initKeyPair(_client);
+            await MemCache.setItemFromCacheBy(CACHENAME.PUBLICKEY, newKeys.publicKey, 6000);
+            await MemCache.setItemFromCacheBy(CACHENAME.PRIVATEKEY, newKeys.privateKey, 6000);
+            
+            return res.json(responseClientApplicationOauth(newKeys.publicKey)).status(201);
         }
     }).catch((err) => {
-        const _response =
-            ResponseBase(
+        const _response = ResponseBase(ResponseStatus.FAILURE, 'Server error when call database', err.message);
+        return res.json({ _response }).status(500);
+    });
+}
+export const hanldeUserAuthenticate = async (_clientAcc: ClientAccount, res: Response) => {
+    await MemCache.getItemFromCacheBy(CACHENAME.PRIVATEKEY).then((keypair) => {
+        if (keypair) {
+            const clientData = decryptUsernamePassword(_clientAcc.credential, keypair);
+
+            getUserByUsername(clientData.username).then((userStored) => {
+                if (userStored && BcriptCompare(clientData.password, userStored.password)) {
+                    if (isExistRefreshToken(userStored._id.toString())) {
+                        return handleIsExistRefreshToken(res);
+                    }
+                    const responseData =
+                        responseUserToken(createAccessToken(userStored._id), initRefreshToken(userStored.id), userStored);
+                    const _response = ResponseBase(ResponseStatus.SUCCESS, 'Authenticated', responseData);
+                    return res.json({ _response }).status(200);
+                }
+
+                const _response = ResponseBase(ResponseStatus.FAILURE, 'Username or password was incorrect', undefined);
+                return res.json({ _response }).status(200);
+
+            }).catch((err) => {
+                const _response = ResponseBase(
+                    ResponseStatus.FAILURE,
+                    'Server error when query database',
+                    err.message);
+                return res.json({ _response }).status(500);
+            });
+        }
+        else {
+            const _response = ResponseBase(
                 ResponseStatus.FAILURE,
-                'server_error_when_call_database',
-                err.message);
-        res.json({ _response }).status(500);
+                'Public Key and Private Key invalid - use /api/v1/app-client/oauth to init new keypair',
+                undefined);
+            return res.json({ _response }).status(200);
+        }
+    }).catch((err) => {
+        const _response = ResponseBase(ResponseStatus.WRONG_FORMAT, err.message, undefined);
+        return res.json({ _response }).status(500);
     });
 }
 
-export const hanldeUserAuthenticate = (_clientAcc: ClientAccount, res: Response) => {
-    getPrivateByPublickey(_clientAcc.publicKey).then((keypair) => {
+export const repairRSAKeypair = () => {
+    getRSAKeypair().then(async (keypair) => {
         if (keypair) {
-            const data = decryptUsernamePassword(_clientAcc.credential, keypair.privateKey);
-            console.log(data);
-            getUserByUsernameAndPassword(data.username, data.password).then((user) => {
-                if (user) {
-                    const _response =
-                        ResponseBase(
-                            ResponseStatus.SUCCESS,
-                            'Authentication_Success_here_is_user_information',
-                            user);
-                    res.json({ _response }).status(200);
-                }
-                else {
-                    const _response =
-                        ResponseBase(
-                            ResponseStatus.FAILURE,
-                            'Username_or_password_was_wrong',
-                            undefined);
-                    res.json({ _response }).status(200);
-                }
-            }).catch((err) => {
-                const _response =
-                    ResponseBase(
-                        ResponseStatus.FAILURE,
-                        'Server_error_when_call_database',
-                        err.message);
-                res.json({ _response }).status(500);
-            });
+            await MemCache.setItemFromCacheBy(CACHENAME.PUBLICKEY, keypair.publicKey, 6000);
+            await MemCache.setItemFromCacheBy(CACHENAME.PRIVATEKEY, keypair.privateKey, 6000);
         }
-    }).catch((err) => {
-        const _response =
-            ResponseBase(
-                ResponseStatus.FAILURE,
-                err.message,
-                undefined);
-        res.json({ _response }).status(500);
-    });
+    })
 }

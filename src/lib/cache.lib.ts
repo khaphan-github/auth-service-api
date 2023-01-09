@@ -3,15 +3,20 @@ import { MemoryStorage } from "node-ts-cache-storage-memory";
 
 const ResponseCache = new CacheContainer(new MemoryStorage());
 
-export class memCache {
-    static getItemFromResponseCacheBy = async (name: string) => {
-        return await ResponseCache.getItem<any>(name);
+export class MemCache {
+    static getItemFromCacheBy = async (name: CACHENAME) => {
+        return await ResponseCache.getItem<any>(name.toString());
     }
     
-    static invalidResponseCacheBy = async () => {
+    static invalidCacheBy = async () => {
         await ResponseCache.clear();
     }
-    static setItemFromResponseCacheBy = async (name: string, value: any, invalidTime: number) => {
-       await ResponseCache.setItem(name, value, { ttl: invalidTime });
+    static setItemFromCacheBy = async (name: CACHENAME, value: any, invalidTime: number) => {
+       await ResponseCache.setItem(name.toString(), value, { ttl: invalidTime });
     }
+}
+
+export enum CACHENAME {
+    PRIVATEKEY,
+    PUBLICKEY,
 }

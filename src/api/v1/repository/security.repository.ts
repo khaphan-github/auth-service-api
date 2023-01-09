@@ -26,11 +26,15 @@ export const getPublicKeyByClient = (_client: ClientKey) => {
     return RSAKeypair.findOne({
         clientId: _client.clientId,
         clientSecret: _client.clientSecret
-    });
+    }).select('publicKey');
 }
 
 export const getPrivateByPublickey = (publicKey: string) => {
     return RSAKeypair.findOne({
         publicKey: publicKey
-    });
+    }).select('privateKey');
+}
+
+export const getRSAKeypair = () => {
+    return RSAKeypair.findOne().select(['publicKey', 'privateKey']);
 }

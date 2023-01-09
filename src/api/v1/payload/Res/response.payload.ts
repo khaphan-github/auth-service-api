@@ -18,7 +18,7 @@ export enum ResponseStatus {
     WRONG_FORMAT = 'WRONG_FORMAT',
     NO_PERMISSIONS = 'NO_PERMISSIONS',
     UNAUTHORIZE='UNAUTHORIZE',
-    FOBIDDENT='FOBIDDENT'
+    FORBIDDENT='FORBIDDENT'
 }
 
 export enum Version {
