@@ -15,9 +15,8 @@ export const saveUser = (_user: IUser) => {
     return userToStore.save();
 }
 
-export const getUserByUsernameAndPassword = (_username: string, _password: string) => {
+export const getUserByUsername = (_username: string) => {
     return User.findOne({
-        username: _username,
-        password: _password,
-    });
+        username: _username
+    }).select(['fullname', 'password', 'avatar', 'phone', 'email']);
 }

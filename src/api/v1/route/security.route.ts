@@ -5,6 +5,8 @@ import { appClientAuthFillter } from '../middleware/authentication.middleware';
 const securityRoute = express.Router();
 
 securityRoute.post('/app-client/oauth', SecurityController.appClientAuthenticate);
-securityRoute.post('/user/oauth', appClientAuthFillter, SecurityController.userAuthenticate);
+securityRoute.post('/user/oauth/token', SecurityController.userRefreshToken);
+securityRoute.post('/user/oauth/logout', appClientAuthFillter);
+securityRoute.post('/user/oauth', SecurityController.userAuthenticate);
 
 export = securityRoute;

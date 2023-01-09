@@ -1,41 +1,35 @@
+import console from "console";
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { serverConfig } from "../../../config/serverConfig";
-import { ResponseBase, ResponseStatus } from "../payload/response.payload";
+import { JWTModel } from "../model/jwt.model";
+import { ResponseBase, ResponseStatus } from "../payload/Res/response.payload";
+import { handleUserLogout } from "../services/jwt.service";
 
-export const appClientAuthFillter = async (req: Request, res: Response, next: NextFunction) => {
+export const appClientAuthFillter = async (req: Request, res: Response, NextFunction: NextFunction) => {
+    console.log('Request throught fillter!!!');
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const logoutURL = '/user/oauth/logout';
     try {
-        console.log('Request throught fillter!!!');
-        const token = req.header('Authorization')?.replace('Bearer ', '');
-
         if (token) {
             jwt.verify(token, serverConfig.jwt.accesskey, (err, user) => {
-                console.log(user)
-                // Check user inDB;
-                if (err) {
-                    const _response = ResponseBase(
-                        ResponseStatus.FOBIDDENT,
-                        err.message,
-                        undefined);
-                    res.status(403).json({ _response });
+                if (req.url == logoutURL) {
+                    const userData = user as JWTModel;
+                    if (userData.userID) { return handleUserLogout(userData.userID, res); }
                 }
-                next();
+                if (err) {
+                    const _response = ResponseBase(ResponseStatus.FORBIDDENT, err.message, undefined);
+                    return res.status(403).json({ _response });
+                }
+                NextFunction();
             })
         } else {
-            const _response = ResponseBase(
-                ResponseStatus.WRONG_FORMAT,
-                'Request_require_header_Authorization_but_you_missing',
-                undefined);
-            res.status(400).json({ _response });
+            const _response = ResponseBase(ResponseStatus.WRONG_FORMAT,
+                'Request require header Authorization but you missing', undefined);
+            return res.status(400).json({ _response });
         }
-
-    } catch (err) {
-        if (err) {
-            const _response = ResponseBase(
-                ResponseStatus.UNAUTHORIZE,
-                'Request_require_header_Authorization_but_you_missing',
-                undefined);
-            res.status(401).json(_response);
-        }
+    } catch (error) {
+        const _response = ResponseBase(ResponseStatus.FORBIDDENT, 'Token invalid', undefined);
+        return res.status(403).json({ _response });
     }
-};
+}

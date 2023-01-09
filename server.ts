@@ -5,6 +5,7 @@ import { serverConfig } from './src/config/serverConfig';
 import mongoose from 'mongoose';
 import securityRoute from './src/api/v1/route/security.route';
 import userRoute from './src/api/v1/route/user.route';
+import { repairRSAKeypair } from './src/api/v1/services/rsa.service';
 
 const server: Application = express();
 export const routes = express.Router();
@@ -22,6 +23,7 @@ const morgan = require('morgan');
 server.use(morgan('combined'));
 
 // Connect to mongodb
+console.info(' ↻ [server]: Waitting for connect to mongodb ...');
 mongoose.set('strictQuery', true);
 mongoose
   .connect(serverConfig.mongo.url, { retryWrites: true, w: 'majority' })
@@ -55,6 +57,8 @@ const StartServer = () => {
   routes.use(securityRoute);
   routes.use(userRoute);
 
+  console.log(` ↺ [server]: Server repair RSA keypair ...`);
+  repairRSAKeypair();
   // Start server
   const port = serverConfig.server.port;
   server.listen(port, () => {
