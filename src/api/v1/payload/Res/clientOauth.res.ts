@@ -1,4 +1,4 @@
-import { serverConfig } from "../../../../config/serverConfig";
+import { serverConfig } from "../../../../config/server.config";
 import { IUserModel } from "../../model/user.model";
 import { ResponseBase, ResponseStatus } from "./response.payload";
 

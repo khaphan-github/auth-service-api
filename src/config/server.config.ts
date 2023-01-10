@@ -4,10 +4,9 @@ dotenv.config();
 
 const MONGODB_USERNAME = process.env.MONGODB_USERNAME || '';
 const MONGODB_PASSWORD = process.env.MONGODB_PASSWORD || '';
-const MONGODB_URL =
-  `mongodb+srv://
+const MONGODB_URL = `mongodb+srv://
 ${MONGODB_USERNAME}:${MONGODB_PASSWORD}
-@clustersingapore.b43lfcm.mongodb.net/webrtc`;
+@clusternvirginia.6dnisja.mongodb.net/webrtc`;
 
 const SERVER_PORT = process.env.PORT || 3000;
 
@@ -25,6 +24,10 @@ const JWT_REFRESH_SECRET =
 
 const JWT_EXPIRE_TIME = process.env.JWT_EXPIRE_TIME ? Number(process.env.JWT_EXPIRE_TIME) : 3600;
 
+
+const MAIL_USERNAME = process.env.MAIL_SERVER_USERNAME;
+const MAIL_PASSWORD = process.env.MAIL_SERVER_PASSWORD;
+
 export const serverConfig = {
   mongo: {
     url: MONGODB_URL
@@ -41,6 +44,10 @@ export const serverConfig = {
     expriseTime: JWT_EXPIRE_TIME
   },
   memoryCache: {
-    
+
+  },
+  mailServer: {
+    username: MAIL_USERNAME,
+    password: MAIL_PASSWORD
   }
 }

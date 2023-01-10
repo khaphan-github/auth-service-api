@@ -54,7 +54,7 @@ export const handleAppClientAuthenticate = async (_client: ClientKey, res: Respo
             const newKeys = initKeyPair(_client);
             await MemCache.setItemFromCacheBy(CACHENAME.PUBLICKEY, newKeys.publicKey, 6000);
             await MemCache.setItemFromCacheBy(CACHENAME.PRIVATEKEY, newKeys.privateKey, 6000);
-            
+
             return res.json(responseClientApplicationOauth(newKeys.publicKey)).status(201);
         }
     }).catch((err) => {
@@ -62,6 +62,7 @@ export const handleAppClientAuthenticate = async (_client: ClientKey, res: Respo
         return res.json({ _response }).status(500);
     });
 }
+
 export const hanldeUserAuthenticate = async (_clientAcc: ClientAccount, res: Response) => {
     await MemCache.getItemFromCacheBy(CACHENAME.PRIVATEKEY).then((keypair) => {
         if (keypair) {
@@ -75,7 +76,7 @@ export const hanldeUserAuthenticate = async (_clientAcc: ClientAccount, res: Res
                     const responseData =
                         responseUserToken(createAccessToken(userStored._id), initRefreshToken(userStored.id), userStored);
                     const _response = ResponseBase(ResponseStatus.SUCCESS, 'Authenticated', responseData);
-                    return res.json({ _response }).status(200);
+                    return res.json(_response).status(200);
                 }
 
                 const _response = ResponseBase(ResponseStatus.FAILURE, 'Username or password was incorrect', undefined);
@@ -86,7 +87,7 @@ export const hanldeUserAuthenticate = async (_clientAcc: ClientAccount, res: Res
                     ResponseStatus.FAILURE,
                     'Server error when query database',
                     err.message);
-                return res.json({ _response }).status(500);
+                return res.json(_response).status(500);
             });
         }
         else {
@@ -94,11 +95,11 @@ export const hanldeUserAuthenticate = async (_clientAcc: ClientAccount, res: Res
                 ResponseStatus.FAILURE,
                 'Public Key and Private Key invalid - use /api/v1/app-client/oauth to init new keypair',
                 undefined);
-            return res.json({ _response }).status(200);
+            return res.json(_response).status(200);
         }
     }).catch((err) => {
         const _response = ResponseBase(ResponseStatus.WRONG_FORMAT, err.message, undefined);
-        return res.json({ _response }).status(500);
+        return res.json(_response).status(500);
     });
 }
 

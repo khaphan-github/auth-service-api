@@ -1,6 +1,6 @@
 import { Response } from "express";
 import jwt from "jsonwebtoken";
-import { serverConfig } from "../../../config/serverConfig";
+import { serverConfig } from "../../../config/server.config";
 import { RefreshTokenReq } from "../payload/request/refreshToken.req";
 import { ContextType, HttpMethod, Method, TokenResponse } from "../payload/Res/clientOauth.res";
 import { ResponseBase, ResponseStatus } from "../payload/Res/response.payload";

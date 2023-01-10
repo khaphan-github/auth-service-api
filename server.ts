@@ -1,7 +1,7 @@
 // Import dependencies && init serverlication express
 import express, { Application } from 'express';
 import bodyParser from 'body-parser';
-import { serverConfig } from './src/config/serverConfig';
+import { serverConfig } from './src/config/server.config';
 import mongoose from 'mongoose';
 import securityRoute from './src/api/v1/route/security.route';
 import userRoute from './src/api/v1/route/user.route';
@@ -61,7 +61,6 @@ const StartServer = () => {
   console.log(` ↺ [server]: Server repair RSA keypair ...`);
   repairRSAKeypair();
 
-  //
   // Start server
   const port = serverConfig.server.port;
   server.listen(port, () => {
@@ -69,12 +68,11 @@ const StartServer = () => {
   });
 
   // Check IP
-  async function updateUser() {
+  async function getIP() {
     await axios.get('https://api.ipify.org').then((response) => {
       console.log(`[server] IP: ${response.data}`);
     })
   }
-
-  updateUser();
+  getIP();
 
 }

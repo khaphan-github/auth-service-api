@@ -1,7 +1,7 @@
 import console from "console";
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { serverConfig } from "../../../config/serverConfig";
+import { serverConfig } from "../../../config/server.config";
 import { JWTModel } from "../model/jwt.model";
 import { ResponseBase, ResponseStatus } from "../payload/Res/response.payload";
 import { handleUserLogout } from "../services/jwt.service";

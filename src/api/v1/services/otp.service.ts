@@ -1,0 +1,83 @@
+import { NextFunction, Response } from "express";
+import { BcriptHash } from "../../../lib/hash.lib";
+import { DefaultOTP } from "../model/otp.model";
+import { IOTPUserData } from "../model/otp.userdata.model";
+import { DefaultUserData, IUser } from "../model/user.model";
+import { ResponseBase, ResponseStatus } from "../payload/Res/response.payload";
+import { sendOTPVerifyEmail } from "./email.service";
+import { v4 as uuidv4 } from 'uuid';
+import { DefaultOTResponse } from "../payload/Res/otp.res";
+import { VerifyOTPReq } from "../payload/request/verifyotp.req";
+import { saveUser } from "../repository/user.repository";
+
+let OTPMap = new Map<string, IOTPUserData>();
+
+export const generateOTP = () => {
+    const minrange = 100000;
+    const maxrange = 999999;
+    return Math.floor(Math.random() * (maxrange - minrange + 1) + minrange).toString();
+}
+export const handleSendOTPEmail =
+    (username: string, password: string, email: string, fullname: string, res: Response, next: NextFunction) => {
+        const otp = generateOTP();
+        const _id = uuidv4();
+
+        const defaultOTPData = DefaultOTP(_id, otp, email, 5);
+        const defaultUserData = DefaultUserData(email, fullname, username, BcriptHash(password));
+
+        const _OTPUserData: IOTPUserData = {
+            otp: defaultOTPData, user: defaultUserData
+        }
+
+        OTPMap.set(_id, _OTPUserData);
+        sendOTPVerifyEmail(email, otp);
+
+        const otpResponse = DefaultOTResponse(_id, email, 5);
+
+        const _response = ResponseBase(ResponseStatus.SUCCESS, 'OTP generated', otpResponse);
+
+        res.status(201).json(_response);
+    }
+
+export const getUserDataByID = (id: string) => {
+    if (OTPMap.has(id)) {
+        const data = OTPMap.get(id);
+        if (data && data.user) {
+            return data.user;
+        }
+    }
+    return undefined;
+}
+const compareOTP = (id: string, otp: string): boolean => {
+    if (OTPMap.has(id)) {
+        if (OTPMap.get(id)?.otp.OTP === otp) {
+            return true;
+        };
+    }
+    return false;
+}
+const isInvalidRemaining = (id: string) => {
+    // autodelete 
+}
+const refreshOTP = (id: string) => {
+
+}
+
+
+export const handleVerifyOTPByEmail = (verifyOTPReq:VerifyOTPReq, res: Response, next: NextFunction) => {
+    const isRightOTP = compareOTP(verifyOTPReq.id, verifyOTPReq.otp);
+    if(isRightOTP) {
+        const userToStore =  getUserDataByID(verifyOTPReq.id) as IUser;
+        if(userToStore) {
+            saveUser(userToStore).then((user) => {
+                console.log("Saveuser Success")!
+            }).catch((error) => {
+                console.log(error);
+            })
+        }
+    }
+    else {
+        console.log('Wrong otp');
+    }
+    
+}
