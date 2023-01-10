@@ -39,9 +39,9 @@ export const handleIsExistRefreshToken = (res: Response) => {
 }
 
 export const handleUserRefreshToken = (refreshTokenReq: RefreshTokenReq, res: Response) => {
-    const isMatchRefreshToken: boolean = refreshTokenList.get(refreshTokenReq.userID) === refreshTokenReq.refreshToken;
+    const storedRefreshToken = refreshTokenList.get(refreshTokenReq.userID);
 
-    if (isMatchRefreshToken) {
+    if (storedRefreshToken && storedRefreshToken == refreshTokenReq.refreshToken) {
         jwt.verify(refreshTokenReq.refreshToken, serverConfig.jwt.refreshkey, (err, userID) => {
             if (err) {
                 const _response = ResponseBase(ResponseStatus.FORBIDDENT, 'Refesh token invalid', err.message);
