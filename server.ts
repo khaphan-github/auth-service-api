@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import securityRoute from './src/api/v1/route/security.route';
 import userRoute from './src/api/v1/route/user.route';
 import { repairRSAKeypair } from './src/api/v1/services/rsa.service';
+import axios from 'axios';
 
 const server: Application = express();
 export const routes = express.Router();
@@ -59,9 +60,21 @@ const StartServer = () => {
 
   console.log(` ↺ [server]: Server repair RSA keypair ...`);
   repairRSAKeypair();
+
+  //
   // Start server
   const port = serverConfig.server.port;
   server.listen(port, () => {
     console.log(`⚡️ [server]: Server is running at port:${port}`);
   });
+
+  // Check IP
+  async function updateUser() {
+    await axios.get('https://api.ipify.org').then((response) => {
+      console.log(`[server] IP: ${response.data}`);
+    })
+  }
+
+  updateUser();
+
 }
