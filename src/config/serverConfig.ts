@@ -7,7 +7,7 @@ const MONGODB_PASSWORD = process.env.MONGODB_PASSWORD || '';
 const MONGODB_URL =
   `mongodb+srv://
 ${MONGODB_USERNAME}:${MONGODB_PASSWORD}
-@clustersingapore.b43lfcm.mongodb.net/webrtc`;
+@clusternvirginia.6dnisja.mongodb.net/webrtc`;
 
 const SERVER_PORT = process.env.PORT || 3000;
 
