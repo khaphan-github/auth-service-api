@@ -1,5 +1,10 @@
-export interface JWTModel{
-    userID: string;
+export interface JWTModel {
+    sub:string;
+    scope: string
+    email: string;
+    name: string;
     iat: number;
+    nbf: number;
     exp: number;
+    jti: string;
 }

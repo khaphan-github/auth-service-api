@@ -9,7 +9,6 @@ export const saveUser = (req: Request, res: Response, next: NextFunction) => {
         fullname: req.body.fullname,
         email: req.body.email,
         credential: req.body.credential,
-        publicKey: req.body.publicKey
     };
     handleUserRegister(userReq, res, next);
 }
@@ -26,6 +25,6 @@ export const verifyOTP = (req: Request, res: Response, next: NextFunction) => {
     const verifOTPReq: VerifyOTPReq = {
         id: req.body.id,
         otp: req.body.otp
-    }
+    };
     handleVerifyOTPByEmail(verifOTPReq, res, next);
 }

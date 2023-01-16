@@ -2,8 +2,9 @@ import { NextFunction, Request, Response } from 'express';
 import { ClientKey } from "../payload/request/clientkey.req";
 import { handleAppClientAuthenticate, hanldeUserAuthenticate } from '../services/rsa.service';
 import { ClientAccount } from '../payload/request/clientaccount.req';
-import { handleUserRefreshToken } from '../services/jwt.service';
 import { RefreshTokenReq } from '../payload/request/refreshToken.req';
+import { JWT } from '../services/jwt/jwt.service';
+import { getHeaderAuth } from '../middleware/authentication.middleware';
 
 
 export class SecurityController {
@@ -16,18 +17,31 @@ export class SecurityController {
     };
 
     static userRefreshToken = (req: Request, res: Response, next: NextFunction) => {
-        const refreshTokenReq: RefreshTokenReq = {
-            userID: req.body.userID,
-            refreshToken: req.body.refreshToken,
+        const token = getHeaderAuth(req);
+        if (token) {
+            const refreshTokenReq: RefreshTokenReq = {
+                accessToken: token,
+                refreshToken: req.body.refreshToken,
+            }
+            JWT.RefreshToken(refreshTokenReq, res);
         }
-        handleUserRefreshToken(refreshTokenReq, res);
     };
 
     static userAuthenticate = (req: Request, res: Response, next: NextFunction) => {
         const account: ClientAccount = {
             credential: req.body.credential,
-            publicKey: req.body.publicKey
         };
         hanldeUserAuthenticate(account, res);
     };
+
+    static userSignOut = (req: Request, res: Response, next: NextFunction) => {
+        const token = getHeaderAuth(req);
+        if (token) {
+            const refreshTokenReq: RefreshTokenReq = {
+                accessToken: token,
+                refreshToken: req.body.refreshToken,
+            }
+            JWT.handleUserSignOut(refreshTokenReq, res);
+        }
+    }
 }

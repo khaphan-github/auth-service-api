@@ -1,8 +1,6 @@
 import { serverConfig } from "../../../config/server.config";
 
 import nodemailer from "nodemailer";
-import { VerifyOTPReq } from "../payload/request/verifyotp.req";
-import { NextFunction, Response } from "express";
 
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",

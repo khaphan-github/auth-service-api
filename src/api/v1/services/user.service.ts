@@ -8,7 +8,7 @@ import { getExistUserByUsername } from "../repository/user.repository";
 import { handleSendOTPEmail } from "./otp.service";
 
 export const handleUserRegister = async (user: UserReq, res: Response, next: NextFunction) => {
-    await MemCache.getItemFromCacheBy(CACHENAME.PRIVATEKEY).then((privateKey) => {
+    await MemCache.getItemFromCacheBy(CACHENAME.PRIVATEKEY.toString()).then((privateKey) => {
         console.log(user);
         if (privateKey) {
             const decryptData = decryptUsernamePassword(user.credential, privateKey);
@@ -27,14 +27,14 @@ export const handleUserRegister = async (user: UserReq, res: Response, next: Nex
                         undefined);
                     return res.status(200).json(_response);
                 }
-                return handleSendOTPEmail(decryptData.username, decryptData.password, user.email, user.fullname, res, next);
+                handleSendOTPEmail(decryptData.username, decryptData.password, user.email, user.fullname, res, next);
             }).catch((err) => {
                 const _response = ResponseBase(
                     ResponseStatus.ERROR,
                     'Query database failure',
                     err.message);
                 return res.status(500).json(_response);
-            })
+            });
         }
     }).catch((decriptError) => {
         console.log(decriptError);
@@ -57,26 +57,22 @@ const verifyUserInput = (email: string, fullname: string, username: string, pass
     if (!Validation.isRightEmail(email)) {
         return ResponseBase(
             ResponseStatus.WRONG_FORMAT,
-            'Email wrong format: example@mailserver.com',
-            undefined);
+            'Email wrong format: example@mailserver.com');
     }
     if (!Validation.isRightFullname(fullname)) {
         return ResponseBase(
             ResponseStatus.WRONG_FORMAT,
-            'Fullname length must be more than 10 character',
-            undefined);
+            'Fullname length must be more than 10 character');
     }
     if (!Validation.isPasswordRole(password)) {
         return ResponseBase(
             ResponseStatus.WRONG_FORMAT,
-            'Password wrong format: contain upercase, lowercase, non character, number, length more than 8 character ',
-            undefined);
+            'Password wrong format: contain upercase, lowercase, non character, number, length more than 8 character');
     }
     if (!Validation.isRightUsername(username)) {
         return ResponseBase(
             ResponseStatus.WRONG_FORMAT,
-            'Username wrong format: length must be more than 15 character',
-            undefined);
+            'Username wrong format: length must be more than 15 character');
     }
 }
 

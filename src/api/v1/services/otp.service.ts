@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { DefaultOTResponse } from "../payload/Res/otp.res";
 import { VerifyOTPReq } from "../payload/request/verifyotp.req";
 import { saveUser } from "../repository/user.repository";
+import { IUserModelToUserResponse } from "../payload/Res/clientOauth.res";
 
 let OTPMap = new Map<string, IOTPUserData>();
 
@@ -60,24 +61,27 @@ const isInvalidRemaining = (id: string) => {
     // autodelete 
 }
 const refreshOTP = (id: string) => {
-
+    const storedUserData = OTPMap.get(id) as IOTPUserData;
+    storedUserData.otp.OTP = generateOTP();
+    OTPMap.set(id, storedUserData);
 }
 
-
-export const handleVerifyOTPByEmail = (verifyOTPReq:VerifyOTPReq, res: Response, next: NextFunction) => {
+export const handleVerifyOTPByEmail = (verifyOTPReq: VerifyOTPReq, res: Response, next: NextFunction) => {
     const isRightOTP = compareOTP(verifyOTPReq.id, verifyOTPReq.otp);
-    if(isRightOTP) {
-        const userToStore =  getUserDataByID(verifyOTPReq.id) as IUser;
-        if(userToStore) {
-            saveUser(userToStore).then((user) => {
-                console.log("Saveuser Success")!
-            }).catch((error) => {
-                console.log(error);
-            })
-        }
+    if (!isRightOTP) {
+        const _response = ResponseBase(ResponseStatus.FAILURE, 'OTP not match', undefined);
+        res.status(200).json(_response);
     }
-    else {
-        console.log('Wrong otp');
-    }
-    
+
+    const userToStore = getUserDataByID(verifyOTPReq.id) as IUser;
+
+    saveUser(userToStore).then((user) => {
+        OTPMap.delete(verifyOTPReq.id);
+        const userResponse = IUserModelToUserResponse(user);
+        const _response = ResponseBase(ResponseStatus.SUCCESS, 'Register success', {userResponse});
+        res.status(201).json(_response);
+    }).catch((error) => {
+        const _response = ResponseBase(ResponseStatus.ERROR, error.message, undefined);
+        return res.status(500).json(_response);
+    });
 }

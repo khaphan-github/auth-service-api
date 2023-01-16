@@ -1,1 +1,2 @@
 node_modules
+src\api\v1\services\jwt\key

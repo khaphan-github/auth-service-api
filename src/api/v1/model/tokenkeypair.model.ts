@@ -1,4 +1,4 @@
-export interface RefreshTokenReq {
+export interface TokenKeypairModel {
     accessToken: string;
     refreshToken: string;
 }

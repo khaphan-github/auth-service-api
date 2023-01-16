@@ -1,6 +1,4 @@
-import { sendOTPVerifyEmail } from "../src/api/v1/services/email.service";
-import { generateOTP } from "../src/api/v1/services/otp.service";
-import { resEncrypt } from "../src/lib/rsa.lib";
+import { resEncrypt } from "../../src/lib/rsa.lib";
 
 test('rsa', () => {
     const dataEncoded = {
@@ -12,10 +10,13 @@ test('rsa', () => {
 
     console.log(en);
 });
-
-// test('hash', () => {
-// })
-
-// test('sendEmail', async () => {
-//     await sendOTPVerifyEmail('phanhoangkha02@gmail.com', 123);
-// })
+import * as sc from 'crypto';
+test('SecrecKey', () => {
+    console.log(sc.randomBytes(512).toString('base64'));
+    // mã hóa xong descript xong lưu;
+})
+import fs from 'fs';
+test('get private key', () => {
+    const privateKey = fs.readFileSync("./src/config/secret.key", {encoding:'utf8', flag:'r'});  
+    console.log(privateKey);  
+})

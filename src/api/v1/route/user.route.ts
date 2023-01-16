@@ -11,4 +11,4 @@ userRoute.put('/user', appClientAuthFillter, updateUser);
 userRoute.delete('/user', appClientAuthFillter, deleteUserBy);
 userRoute.post('/user/otp', RateLimit(10, 5), verifyOTP);
 
-export = userRoute;
+export default userRoute;

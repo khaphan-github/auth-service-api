@@ -12,19 +12,6 @@ const SERVER_PORT = process.env.PORT || 3000;
 
 const API_PATH = process.env.API_PATH ? process.env.API_PATH : '/api/v1';
 
-const JWT_ACCESS_SECRET =
-  process.env.JWT_ACCESS_SECRET_KEY ?
-    process.env.JWT_ACCESS_SECRET_KEY :
-    'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCeKcfnEI8MdWhTWcMuHJLgxty';
-
-const JWT_REFRESH_SECRET =
-  process.env.JWT_REFRESH_SECRET_KEY ?
-    process.env.JWT_REFRESH_SECRET_KEY :
-    'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCeKcfnEI8MdWhTWcMuHJLgxty';
-
-const JWT_EXPIRE_TIME = process.env.JWT_EXPIRE_TIME ? Number(process.env.JWT_EXPIRE_TIME) : 3600;
-
-
 const MAIL_USERNAME = process.env.MAIL_SERVER_USERNAME;
 const MAIL_PASSWORD = process.env.MAIL_SERVER_PASSWORD;
 
@@ -37,11 +24,6 @@ export const serverConfig = {
   },
   api: {
     path: API_PATH
-  },
-  jwt: {
-    accesskey: JWT_ACCESS_SECRET,
-    refreshkey: JWT_REFRESH_SECRET,
-    expriseTime: JWT_EXPIRE_TIME
   },
   memoryCache: {
 

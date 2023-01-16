@@ -7,6 +7,9 @@ import securityRoute from './src/api/v1/route/security.route';
 import userRoute from './src/api/v1/route/user.route';
 import { repairRSAKeypair } from './src/api/v1/services/rsa.service';
 import axios from 'axios';
+import { CORSMiddleware } from './src/api/v1/middleware/CORS.middleware';
+import { JWT } from './src/api/v1/services/jwt/jwt.service';
+
 
 const server: Application = express();
 export const routes = express.Router();
@@ -41,19 +44,7 @@ const StartServer = () => {
   server.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
   // Configure routes
-  server.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header(
-      'Access-Control-Allow-Headers',
-      'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-
-    if (req.method == 'OPTIONS') {
-      res.header('Access-Control-Allow-Methods', 'PUT, POST, PATCH, DELETE, GET');
-      return res.status(200).json({});
-    }
-    next();
-  });
-
+  server.use(CORSMiddleware);
   server.use(serverConfig.api.path, routes);
   routes.use(securityRoute);
   routes.use(userRoute);
@@ -67,12 +58,13 @@ const StartServer = () => {
     console.log(`⚡️ [server]: Server is running at port:${port}`);
   });
 
+  // job
+  JWT.refreshSecretKeyJob();
   // Check IP
   async function getIP() {
     await axios.get('https://api.ipify.org').then((response) => {
       console.log(`[server] IP: ${response.data}`);
-    })
+    }) 
   }
   getIP();
-
 }

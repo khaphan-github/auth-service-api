@@ -6,7 +6,6 @@ const handleRateLimit = (req: Request, res: Response) => {
     const _response = ResponseBase(
         ResponseStatus.LIMITREQUEST,
         'Too many requests - try request again after 15 minutes',
-        req.url
     )
     return res.status(429).json(_response);
 }
