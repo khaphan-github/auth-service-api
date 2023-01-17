@@ -1,4 +1,4 @@
-import { serverConfig } from "../../../../config/serverConfig";
+import { serverConfig } from "../../../../config/server.config";
 import { IUserModel } from "../../model/user.model";
 import { ResponseBase, ResponseStatus } from "./response.payload";
 
@@ -23,7 +23,7 @@ export const TokenResponse = (accessToken: string, refreshToken: string) => {
         refreshToken: refreshToken,
         tokenType: 'Bearer',
         scope: 'server.resources',
-        expriseTime: serverConfig.jwt.expriseTime,
+        expriseTime: 300,
         method: HttpMethod.POST,
         type: ContextType.APPLICATIONJSON,
         href: serverConfig.api.path + '/user/oauth/token',
@@ -62,6 +62,22 @@ export interface UserInfo {
     avatarUrl: string;
     phone: string;
     email: string;
+}
+export const IUserModelToUserResponse = (IUserModel: IUserModel) => {
+    const user: UserInfo = {
+        id: IUserModel.id,
+        fullname: IUserModel.fullname,
+        email: IUserModel.email,
+        phone: IUserModel.phone,
+        avatarUrl: IUserModel.avatar,
+    };
+    
+    return {
+        user,
+        href: '/user/oauth',
+        method: HttpMethod.POST,
+        type: ContextType.APPLICATIONJSON
+    };
 }
 export interface ResponseUserInfoAndToken {
     user: UserInfo;
