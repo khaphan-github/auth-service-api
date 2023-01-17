@@ -4,7 +4,6 @@ import { handleAppClientAuthenticate, hanldeUserAuthenticate } from '../services
 import { ClientAccount } from '../payload/request/clientaccount.req';
 import { RefreshTokenReq } from '../payload/request/refreshToken.req';
 import { JWT } from '../services/jwt/jwt.service';
-import { getHeaderAuth } from '../middleware/authentication.middleware';
 
 export class SecurityController {
     static appClientAuthenticate = (req: Request, res: Response, next: NextFunction) => {
@@ -20,7 +19,7 @@ export class SecurityController {
             accessToken: req.body.accessToken,
             refreshToken: req.body.refreshToken,
         };
-        JWT.RefreshToken(refreshTokenReq, res, next);
+        JWT.HandleUserRefreshToken(refreshTokenReq, res, next);
     };
 
     static userAuthenticate = (req: Request, res: Response, next: NextFunction) => {

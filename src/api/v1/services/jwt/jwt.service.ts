@@ -175,7 +175,7 @@ export class JWT {
         JWT.verifyToken(accessToken, AccessTokenSecret.PUBLICKEY, res, NextFunction, TypeVerify.Access);
     }
 
-    public static RefreshToken = (refreshTokenReq: RefreshTokenReq, res: Response, NextFunction: NextFunction) => {
+    public static HandleUserRefreshToken = (refreshTokenReq: RefreshTokenReq, res: Response, NextFunction: NextFunction) => {
         JWT.verifyToken(refreshTokenReq.refreshToken, RefreshTokenSecret.PUBLICKEY, res, NextFunction, TypeVerify.Refresh);
     }
     public static handleUserSignOut = (req: RefreshTokenReq, res: Response, NextFunction: NextFunction) => {
