@@ -6,7 +6,6 @@ import { RefreshTokenReq } from '../payload/request/refreshToken.req';
 import { JWT } from '../services/jwt/jwt.service';
 import { getHeaderAuth } from '../middleware/authentication.middleware';
 
-
 export class SecurityController {
     static appClientAuthenticate = (req: Request, res: Response, next: NextFunction) => {
         const _client: ClientKey = {
@@ -17,14 +16,11 @@ export class SecurityController {
     };
 
     static userRefreshToken = (req: Request, res: Response, next: NextFunction) => {
-        const token = getHeaderAuth(req);
-        if (token) {
-            const refreshTokenReq: RefreshTokenReq = {
-                accessToken: token,
-                refreshToken: req.body.refreshToken,
-            }
-            JWT.RefreshToken(refreshTokenReq, res);
-        }
+        const refreshTokenReq: RefreshTokenReq = {
+            accessToken: req.body.accessToken,
+            refreshToken: req.body.refreshToken,
+        };
+        JWT.RefreshToken(refreshTokenReq, res, next);
     };
 
     static userAuthenticate = (req: Request, res: Response, next: NextFunction) => {
@@ -35,13 +31,10 @@ export class SecurityController {
     };
 
     static userSignOut = (req: Request, res: Response, next: NextFunction) => {
-        const token = getHeaderAuth(req);
-        if (token) {
-            const refreshTokenReq: RefreshTokenReq = {
-                accessToken: token,
-                refreshToken: req.body.refreshToken,
-            }
-            JWT.handleUserSignOut(refreshTokenReq, res);
+        const refreshTokenReq: RefreshTokenReq = {
+            accessToken: req.body.accessToken,
+            refreshToken: req.body.refreshToken,
         }
+        JWT.handleUserSignOut(refreshTokenReq, res, next);
     }
 }

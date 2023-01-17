@@ -4,7 +4,6 @@ export interface JWTModel {
     email: string;
     name: string;
     iat: number;
-    nbf: number;
     exp: number;
     jti: string;
 }
