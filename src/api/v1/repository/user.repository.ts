@@ -20,3 +20,8 @@ export const getUserByUsername = (_username: string) => {
         username: _username
     }).select(['fullname', 'password', 'avatar', 'phone', 'email']);
 }
+export const getExistUserByUsername = (_username: string) => {
+    return User.findOne({
+        username: _username
+    }).select(['username']);
+}

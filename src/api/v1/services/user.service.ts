@@ -1,37 +1,78 @@
-import { Response } from "express";
+import { NextFunction, Response } from "express";
 import { decryptUsernamePassword } from "../../../lib/rsa.lib";
-import { IUser } from "../model/user.model";
 import { UserReq } from "../payload/request/user.req";
-import { getPrivateByPublickey } from "../repository/security.repository";
-import { saveUser } from "../repository/user.repository";
-import { BcriptHash } from "../../../lib/hash.lib";
-export const handleUserRegister = (user: UserReq, res: Response) => {
-    // verify otp by email;
-    getPrivateByPublickey(user.publicKey).then((keypair) => {
-        console.log(user);
+import { CACHENAME, MemCache } from "../../../lib/cache.lib";
+import { Validation } from "../validations/client.validate";
+import { ResponseBase, ResponseStatus } from "../payload/Res/response.payload";
+import { getExistUserByUsername } from "../repository/user.repository";
+import { handleSendOTPEmail } from "./otp.service";
 
-        if (keypair) {
-            const decryptData = decryptUsernamePassword(user.credential, keypair.privateKey);
-            const passwordHash = BcriptHash(decryptData.password);
-            console.log(decryptData);
-            const iUser: IUser = {
-                email: user.email,
-                fullname: user.fullname,
-                username: decryptData.username,
-                avatar: '',
-                initTime: new Date(),
-                password: passwordHash,
-                phone: ''
+export const handleUserRegister = async (user: UserReq, res: Response, next: NextFunction) => {
+    await MemCache.getItemFromCacheBy(CACHENAME.PRIVATEKEY.toString()).then((privateKey) => {
+        console.log(user);
+        if (privateKey) {
+            const decryptData = decryptUsernamePassword(user.credential, privateKey);
+
+            const responseValidate =
+                verifyUserInput(user.email, user.fullname, decryptData.username, decryptData.password);
+            if (responseValidate) {
+                return res.status(200).json(responseValidate);
             }
-            saveUser(iUser).then((data) => {
-                res.status(201);
+            getExistUserByUsername(decryptData.username).then((existUser) => {
+                if (existUser) {
+                    console.log(existUser.username);
+                    const _response = ResponseBase(
+                        ResponseStatus.FAILURE,
+                        'Username already exist - please try again with other username',
+                        undefined);
+                    return res.status(200).json(_response);
+                }
+                handleSendOTPEmail(decryptData.username, decryptData.password, user.email, user.fullname, res, next);
             }).catch((err) => {
-                res.status(201);
+                const _response = ResponseBase(
+                    ResponseStatus.ERROR,
+                    'Query database failure',
+                    err.message);
+                return res.status(500).json(_response);
             });
         }
+    }).catch((decriptError) => {
+        console.log(decriptError);
+        const response = ResponseBase(
+            ResponseStatus.ERROR,
+            decriptError.message,
+            undefined);
+        return res.status(500).json(response);
 
-    }).catch((error) => {
-        res.status(201);
+    }).catch((memoryCacheError) => {
+        const response = ResponseBase(
+            ResponseStatus.ERROR,
+            memoryCacheError.message,
+            undefined);
+        return res.status(500).json(response);
     });
-    res.status(201).end();
+};
+
+const verifyUserInput = (email: string, fullname: string, username: string, password: string) => {
+    if (!Validation.isRightEmail(email)) {
+        return ResponseBase(
+            ResponseStatus.WRONG_FORMAT,
+            'Email wrong format: example@mailserver.com');
+    }
+    if (!Validation.isRightFullname(fullname)) {
+        return ResponseBase(
+            ResponseStatus.WRONG_FORMAT,
+            'Fullname length must be more than 10 character');
+    }
+    if (!Validation.isPasswordRole(password)) {
+        return ResponseBase(
+            ResponseStatus.WRONG_FORMAT,
+            'Password wrong format: contain upercase, lowercase, non character, number, length more than 8 character');
+    }
+    if (!Validation.isRightUsername(username)) {
+        return ResponseBase(
+            ResponseStatus.WRONG_FORMAT,
+            'Username wrong format: length must be more than 15 character');
+    }
 }
+
