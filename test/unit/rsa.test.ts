@@ -10,13 +10,3 @@ test('rsa', () => {
 
     console.log(en);
 });
-import * as sc from 'crypto';
-test('SecrecKey', () => {
-    console.log(sc.randomBytes(512).toString('base64'));
-    // mã hóa xong descript xong lưu;
-})
-import fs from 'fs';
-test('get private key', () => {
-    const privateKey = fs.readFileSync("./src/config/secret.key", {encoding:'utf8', flag:'r'});  
-    console.log(privateKey);  
-})

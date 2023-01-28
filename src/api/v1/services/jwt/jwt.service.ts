@@ -36,18 +36,9 @@ const enum TypeVerify {
 export class JWT {
     private static BlackListToken: Map<string, string> = new Map<string, string>();
 
-    /** Job call every 10 minutes to refresh */
-    public static refreshSecretKeyJob() {
-        schedule.scheduleJob({ start: new Date(Date.now()), rule: '*/10  * * * *' }, () => {
-            console.log('⚡️ [server - job] Refresh JWT secret key at', Date.now());
-            JWT.moveSecretKeytoCache();
-            JWT.prepareJWTSecret();
-            JWT.BlackListToken.clear();
-        });
-    }
-
     private static moveSecretKeytoCache = async () => {
         const expriseTime = 60 * 11;
+
         await MemCache.setItemFromCacheBy(RefreshTokenSecret.PUBLICKEY,
             JWT.getKeyFromFile(RefreshTokenSecret.PUBLICKEY), expriseTime);
 
@@ -66,17 +57,31 @@ export class JWT {
         JWT.generateKeyByShellScript(RefreshTokenSecret.PUBLICKEY, RefreshTokenSecret.PRIVATEKEY);
     }
 
+    /** Job call every 10 minutes to refresh */
+    public static refreshSecretKeyJob() {
+        const stateDate = new Date(Date.now());
+        const ruleCorn = '*/10  * * * *';
+
+        schedule.scheduleJob({ start: stateDate, rule: ruleCorn }, () => {
+            console.log('⚡️ [server - job] Refresh JWT secret key at', Date.now());
+
+            JWT.moveSecretKeytoCache();
+            JWT.prepareJWTSecret();
+            JWT.BlackListToken.clear();
+        });
+    }
+
     private static generateKeyByShellScript = (tokenPublic: string, tokenPrivate: string) => {
         const workPath = 'src/api/v1/services/jwt/key';
-        const genPrivateKeyProcess =
-            child_process.spawn('openssl',
-                ['ecparam', '-genkey', '-name', 'secp521r1', '-noout', '-out', tokenPrivate],
-                { cwd: workPath }
-            );
+        const genPrivateKeyProcess = child_process.spawn('openssl',
+            ['ecparam', '-genkey', '-name', 'secp521r1', '-noout', '-out', tokenPrivate],
+            { cwd: workPath }
+        );
 
         genPrivateKeyProcess.on('close', (code) => {
             if (code === 0) {
-                child_process.spawn('openssl', ['ec', '-in', tokenPrivate, '-pubout', '-out', tokenPublic],
+                child_process.spawn('openssl',
+                    ['ec', '-in', tokenPrivate, '-pubout', '-out', tokenPublic],
                     { cwd: workPath }
                 );
             };
@@ -90,6 +95,7 @@ export class JWT {
 
     private static generateAccessToken = (payload: JwtPayload) => {
         const accessTokenPrivateKey = JWT.getKeyFromFile(AccessTokenSecret.PRIVATEKEY);
+
         const option: SignOptions = {
             jwtid: uuidv4(),
             algorithm: 'ES512',
@@ -100,6 +106,7 @@ export class JWT {
 
     private static generateRefreshToken = (payload: JwtPayload) => {
         const refreshTokenPrivateKey = JWT.getKeyFromFile(RefreshTokenSecret.PRIVATEKEY);
+
         const option: SignOptions = {
             jwtid: uuidv4(),
             algorithm: 'ES512',
@@ -122,17 +129,24 @@ export class JWT {
         return tokenKeypair;
     }
 
-    private static handleJWTBase = (token: string, err: VerifyErrors | null, decoded: string | jwt.JwtPayload | jwt.Jwt | undefined, res: Response, NextFunction: NextFunction, type: TypeVerify) => {
-        const errResponse = ResponseBase(ResponseStatus.FORBIDDENT, 'Token invalid');
+    private static handleJWTBase = (token: string, err: VerifyErrors | null,
+        decoded: string | jwt.JwtPayload | jwt.Jwt | undefined,
+        res: Response, NextFunction: NextFunction, type: TypeVerify) => {
 
-        if (err) { return res.status(401).json(errResponse) }
+        const errResponse = ResponseBase(ResponseStatus.UNAUTHORIZE, 'Token invalid');
+
+        if (err) {
+            return res.status(401).json(errResponse)
+        }
+
         if (decoded && JWT.BlackListToken.has((decoded as JWTModel).jti)) {
-            return res.status(401).json(ResponseBase(ResponseStatus.FORBIDDENT, 'Token is blocked'));
-        };
+            return res.status(403).json(ResponseBase(ResponseStatus.FORBIDDENT, 'Token is blocked'));
+        }
 
         if (type != TypeVerify.Access) {
             JWT.BlackListToken.set((decoded as JWTModel).jti, token);
         }
+
         switch (type) {
             case TypeVerify.Access:
                 NextFunction();
@@ -145,14 +159,18 @@ export class JWT {
             case TypeVerify.Refresh:
                 const payload = decoded as JWTModel;
                 const notBefore: boolean = payload.exp - (Math.floor(Date.now() / 1000)) > 60 * 6; // 6 minutes
+
                 if (notBefore) {
-                    return res.status(401).json(ResponseBase(ResponseStatus.FORBIDDENT, 'Token not active'));
+                    return res.status(403).json(ResponseBase(ResponseStatus.FORBIDDENT, 'Token not active'));
                 }
+
                 const tokens = JWT.initTokenKeypair(payload.sub, payload.email, payload.name);
                 const tokenRes: Token = TokenResponse(tokens.accessToken, tokens.refreshToken);
+
                 return res.status(200).json(ResponseBase(ResponseStatus.SUCCESS, 'Refresh token success', tokenRes));
         }
     }
+
     private static verifyToken = (token: string, key: string, res: Response, NextFunction: NextFunction, type: TypeVerify) => {
         const keyFromFile = JWT.getKeyFromFile(key);
         const option: VerifyOptions = { algorithms: ['ES512'] }
@@ -161,7 +179,7 @@ export class JWT {
             if (err?.name === 'JsonWebTokenError') {
                 const keyFromCache = await MemCache.getItemFromCacheBy(key);
                 if (!keyFromCache) {
-                    return res.status(401).json(ResponseBase(ResponseStatus.FORBIDDENT, 'Token invalid'));
+                    return res.status(403).json(ResponseBase(ResponseStatus.FORBIDDENT, 'Token invalid'));
                 }
                 jwt.verify(token, keyFromCache, option, (err, decoded) => {
                     return JWT.handleJWTBase(token, err, decoded, res, NextFunction, type);
@@ -171,14 +189,26 @@ export class JWT {
         });
     }
 
-    public static verifyAccessToken = (accessToken: string, res: Response, NextFunction: NextFunction) => {
-        JWT.verifyToken(accessToken, AccessTokenSecret.PUBLICKEY, res, NextFunction, TypeVerify.Access);
+    public static verifyAccessToken = 
+        (accessToken: string,
+        res: Response,
+        NextFunction: NextFunction) => {
+
+        JWT.verifyToken(
+            accessToken,
+            AccessTokenSecret.PUBLICKEY,
+            res,
+            NextFunction,
+            TypeVerify.Access
+        );
     }
 
+
     public static HandleUserRefreshToken = (refreshTokenReq: RefreshTokenReq, res: Response, NextFunction: NextFunction) => {
-        JWT.verifyToken(refreshTokenReq.refreshToken, RefreshTokenSecret.PUBLICKEY, res, NextFunction, TypeVerify.Refresh);
+        return JWT.verifyToken(refreshTokenReq.refreshToken, RefreshTokenSecret.PUBLICKEY, res, NextFunction, TypeVerify.Refresh);
     }
+
     public static handleUserSignOut = (req: RefreshTokenReq, res: Response, NextFunction: NextFunction) => {
-        JWT.verifyToken(req.refreshToken, RefreshTokenSecret.PUBLICKEY, res, NextFunction, TypeVerify.SignOut);
+        return JWT.verifyToken(req.refreshToken, RefreshTokenSecret.PUBLICKEY, res, NextFunction, TypeVerify.SignOut);
     }
 }
