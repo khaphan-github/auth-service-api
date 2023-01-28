@@ -34,7 +34,7 @@ export const handleAppClientAuthenticate = async (_client: ClientKey, res: Respo
 
     if (!isRightClient) {
         const _response = ResponseBase(ResponseStatus.FAILURE, 'Client is not exist');
-        return res.status(200).json({ _response });
+        return res.status(200).json(_response);
     }
 
     const publicKeyCache = await MemCache.getItemFromCacheBy(CACHENAME.PUBLICKEY.toString());
@@ -59,7 +59,7 @@ export const handleAppClientAuthenticate = async (_client: ClientKey, res: Respo
         }
     }).catch((err) => {
         const _response = ResponseBase(ResponseStatus.FAILURE, 'Server error when call database', err.message);
-        return res.json({ _response }).status(500);
+        return res.json(_response).status(500);
     });
 }
 
@@ -80,7 +80,7 @@ export const hanldeUserAuthenticate = async (_clientAcc: ClientAccount, res: Res
                 }
 
                 const _response = ResponseBase(ResponseStatus.FAILURE, 'Username or password was incorrect');
-                return res.json({ _response }).status(200);
+                return res.json(_response).status(200);
 
             }).catch((err) => {
                 const _response = ResponseBase(
