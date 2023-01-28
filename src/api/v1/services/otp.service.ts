@@ -18,27 +18,42 @@ export const generateOTP = () => {
     const maxrange = 999999;
     return Math.floor(Math.random() * (maxrange - minrange + 1) + minrange).toString();
 }
-export const handleSendOTPEmail =
-    (username: string, password: string, email: string, fullname: string, res: Response, next: NextFunction) => {
-        const otp = generateOTP();
-        const _id = uuidv4();
+export const handleSendOTPEmail = (
+    username: string,
+    password: string,
+    email: string,
+    fullname: string,
+    res: Response,
+    next: NextFunction) => {
+    const otp = generateOTP();
+    const _id = uuidv4();
 
-        const defaultOTPData = DefaultOTP(_id, otp, email, 5);
-        const defaultUserData = DefaultUserData(email, fullname, username, BcriptHash(password));
+    const defaultOTPData = DefaultOTP(_id, otp, email, 5);
+    const defaultUserData =
+        DefaultUserData(
+            email,
+            fullname,
+            username,
+            BcriptHash(password));
 
-        const _OTPUserData: IOTPUserData = {
-            otp: defaultOTPData, user: defaultUserData
-        }
-
-        OTPMap.set(_id, _OTPUserData);
-        sendOTPVerifyEmail(email, otp);
-
-        const otpResponse = DefaultOTResponse(_id, email, 5);
-
-        const _response = ResponseBase(ResponseStatus.SUCCESS, 'OTP generated', otpResponse);
-
-        res.status(201).json(_response);
+    const _OTPUserData: IOTPUserData = {
+        otp: defaultOTPData,
+        user: defaultUserData
     }
+
+    OTPMap.set(_id, _OTPUserData);
+    sendOTPVerifyEmail(email, otp);
+
+    const otpResponse = DefaultOTResponse(_id, email, 5);
+
+    const _response =
+        ResponseBase(
+            ResponseStatus.SUCCESS,
+            'OTP generated',
+            otpResponse);
+
+    res.status(201).json(_response);
+}
 
 export const getUserDataByID = (id: string) => {
     if (OTPMap.has(id)) {
@@ -69,7 +84,10 @@ const refreshOTP = (id: string) => {
 export const handleVerifyOTPByEmail = (verifyOTPReq: VerifyOTPReq, res: Response, next: NextFunction) => {
     const isRightOTP = compareOTP(verifyOTPReq.id, verifyOTPReq.otp);
     if (!isRightOTP) {
-        const _response = ResponseBase(ResponseStatus.FAILURE, 'OTP not match', undefined);
+        const _response =
+            ResponseBase(
+                ResponseStatus.FAILURE,
+                'OTP not match');
         res.status(200).json(_response);
     }
 
@@ -78,10 +96,14 @@ export const handleVerifyOTPByEmail = (verifyOTPReq: VerifyOTPReq, res: Response
     saveUser(userToStore).then((user) => {
         OTPMap.delete(verifyOTPReq.id);
         const userResponse = IUserModelToUserResponse(user);
-        const _response = ResponseBase(ResponseStatus.SUCCESS, 'Register success', {userResponse});
+        const _response =
+            ResponseBase(
+                ResponseStatus.SUCCESS,
+                'Register success',
+                { userResponse });
         res.status(201).json(_response);
     }).catch((error) => {
-        const _response = ResponseBase(ResponseStatus.ERROR, error.message, undefined);
+        const _response = ResponseBase(ResponseStatus.ERROR, error.message);
         return res.status(500).json(_response);
     });
 }

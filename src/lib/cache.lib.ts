@@ -17,7 +17,7 @@ export class MemCache {
 }
 
 export enum CACHENAME {
-    PRIVATEKEY,
-    PUBLICKEY,
-    JWTBLACKLIST,
+    PRIVATEKEY = 'PRIVATEKEY',
+    PUBLICKEY = 'PUBLICKEY',
+    JWTBLACKLIST = 'JWTBLACKLIST',
 }

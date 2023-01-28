@@ -1,5 +1,5 @@
 import { NextFunction, Response } from "express";
-import { decryptUsernamePassword } from "../../../lib/rsa.lib";
+import { decryptDataByPrivateKey } from "../../../lib/rsa.lib";
 import { UserReq } from "../payload/request/user.req";
 import { CACHENAME, MemCache } from "../../../lib/cache.lib";
 import { Validation } from "../validations/client.validate";
@@ -11,7 +11,7 @@ export const handleUserRegister = async (user: UserReq, res: Response, next: Nex
     await MemCache.getItemFromCacheBy(CACHENAME.PRIVATEKEY.toString()).then((privateKey) => {
         console.log(user);
         if (privateKey) {
-            const decryptData = decryptUsernamePassword(user.credential, privateKey);
+            const decryptData = decryptDataByPrivateKey(user.credential, privateKey);
 
             const responseValidate =
                 verifyUserInput(user.email, user.fullname, decryptData.username, decryptData.password);
@@ -23,8 +23,7 @@ export const handleUserRegister = async (user: UserReq, res: Response, next: Nex
                     console.log(existUser.username);
                     const _response = ResponseBase(
                         ResponseStatus.FAILURE,
-                        'Username already exist - please try again with other username',
-                        undefined);
+                        'Username already exist - please try again with other username');
                     return res.status(200).json(_response);
                 }
                 handleSendOTPEmail(decryptData.username, decryptData.password, user.email, user.fullname, res, next);
@@ -40,15 +39,13 @@ export const handleUserRegister = async (user: UserReq, res: Response, next: Nex
         console.log(decriptError);
         const response = ResponseBase(
             ResponseStatus.ERROR,
-            decriptError.message,
-            undefined);
+            decriptError.message);
         return res.status(500).json(response);
 
     }).catch((memoryCacheError) => {
         const response = ResponseBase(
             ResponseStatus.ERROR,
-            memoryCacheError.message,
-            undefined);
+            memoryCacheError.message);
         return res.status(500).json(response);
     });
 };

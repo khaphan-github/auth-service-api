@@ -1,6 +1,5 @@
 import express from 'express';
 import { SecurityController } from '../controller/security.controller';
-import { appClientAuthFillter } from '../middleware/authentication.middleware';
 import { RateLimit } from '../middleware/ratelimit.middleware';
 
 const securityRoute = express.Router();
