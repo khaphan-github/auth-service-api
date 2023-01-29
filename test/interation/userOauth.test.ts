@@ -51,27 +51,13 @@ describe('User_Authentication_interation_testing', () => {
             expect(response.data.status).toMatch('WRONG_FORMAT');
             expect(response.data.message).toMatch(expectedMessage);
         })
-
     });
 
-    test('TestUserAuthenticate_WhenGivenEmptyCredential_Does', async () => {
-       
-    });
-    test('TestUserAuthenticate_WhenGivenEmptyUserNameInCredential_Does', async () => {
-       
-    });
-    
-    test('TestUserAuthenticate_WhenGivenEmptyPasswordInCredential_Does', async () => {
-       
-    });
-    test('TestUserAuthenticate_WhenGivenEmptyBothUserNameAndPasswordInCredential_Does', async () => {
-       
-    });
-    test('TestUserAuthenticate_WhenGivenEmplyUserNameInCredential_Does', async () => {
-       
-    });
-    test('TestUserAuthenticate_WhenGivenEmplyUserNameInCredential_Does', async () => {
-       
+    test('TestUserAuthenticate_WhenGivenEmptyCredential_DoesStatusWrongFormat', async () => {
+        const _config = requestConfig({});
+        await axios(_config).then((response) => {
+            expect(response.data.status).toMatch('WRONG_FORMAT');
+        })
     });
 })
 
