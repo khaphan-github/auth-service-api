@@ -17,6 +17,7 @@ export const saveNewRSAKeypair = (
     _client: ClientKey,
     publicKey: string,
     privateKey: string) => {
+
     const keyStore: IRSAKeypair = {
         clientId: _client.clientId,
         clientSecret: _client.clientSecret,
@@ -24,21 +25,25 @@ export const saveNewRSAKeypair = (
         publicKey: publicKey,
         privateKey: privateKey
     }
+
     saveRSAKeypair(keyStore);
 }
 
 export const initKeyPair = (_client: ClientKey) => {
     const keys = generateKey();
+
     saveNewRSAKeypair(
         _client,
         keys.publicKey,
         keys.privateKey);
+
     return keys;
 }
 
 export const handleAppClientAuthenticate = async (
     _client: ClientKey,
     res: Response) => {
+
     const isRightClient = Validation.isRightClient(_client);
 
     if (!isRightClient) {
@@ -50,6 +55,7 @@ export const handleAppClientAuthenticate = async (
     }
 
     const publicKeyCache = await MemCache.getItemFromCacheBy(CACHENAME.PUBLICKEY);
+
     if (publicKeyCache) {
         const _response = responseClientApplicationOauth(publicKeyCache);
         return res.json(_response).status(200);
@@ -58,7 +64,10 @@ export const handleAppClientAuthenticate = async (
     getPublicKeyByClient(_client).then(async (results) => {
         if (results) {
             const _response = responseClientApplicationOauth(results.publicKey);
-            await MemCache.setItemFromCacheBy(CACHENAME.PUBLICKEY, results.publicKey, 60);
+            await MemCache.setItemFromCacheBy(
+                CACHENAME.PUBLICKEY,
+                results.publicKey,
+                60);
             return res.json(_response).status(200);
         }
         else {
@@ -73,7 +82,8 @@ export const handleAppClientAuthenticate = async (
                 newKeys.privateKey,
                 6000);
 
-            return res.json(responseClientApplicationOauth(newKeys.publicKey)).status(201);
+            const response = responseClientApplicationOauth(newKeys.publicKey);
+            return res.json(response).status(201);
         }
     }).catch((err) => {
         const _response =

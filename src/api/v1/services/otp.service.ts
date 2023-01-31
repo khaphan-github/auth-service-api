@@ -14,9 +14,10 @@ import { IUserModelToUserResponse } from "../payload/Res/clientOauth.res";
 let OTPMap = new Map<string, IOTPUserData>();
 
 export const generateOTP = () => {
-    const minrange = 100000;
-    const maxrange = 999999;
-    return Math.floor(Math.random() * (maxrange - minrange + 1) + minrange).toString();
+    const MIN_RANGE = 100000;
+    const MAX_RANGE = 999999;
+    const randomNumber = Math.random() * (MAX_RANGE - MIN_RANGE + 1) + MIN_RANGE;
+    return Math.floor(randomNumber).toString();
 }
 export const handleSendOTPEmail = (
     username: string,
@@ -25,10 +26,18 @@ export const handleSendOTPEmail = (
     fullname: string,
     res: Response,
     next: NextFunction) => {
-    const otp = generateOTP();
-    const _id = uuidv4();
 
-    const defaultOTPData = DefaultOTP(_id, otp, email, 5);
+    const OTP = generateOTP();
+    const otpID = uuidv4();
+    const remainTime = 5;
+
+    const defaultOTPData =
+        DefaultOTP(
+            otpID,
+            OTP,
+            email,
+            remainTime);
+
     const defaultUserData =
         DefaultUserData(
             email,
@@ -41,10 +50,15 @@ export const handleSendOTPEmail = (
         user: defaultUserData
     }
 
-    OTPMap.set(_id, _OTPUserData);
-    sendOTPVerifyEmail(email, otp);
+    OTPMap.set(otpID, _OTPUserData);
 
-    const otpResponse = DefaultOTResponse(_id, email, 5);
+    sendOTPVerifyEmail(email, OTP);
+
+    const otpResponse =
+        DefaultOTResponse(
+            otpID,
+            email,
+            remainTime);
 
     const _response =
         ResponseBase(
@@ -81,7 +95,11 @@ const refreshOTP = (id: string) => {
     OTPMap.set(id, storedUserData);
 }
 
-export const handleVerifyOTPByEmail = (verifyOTPReq: VerifyOTPReq, res: Response, next: NextFunction) => {
+export const handleVerifyOTPByEmail = (
+    verifyOTPReq: VerifyOTPReq,
+    res: Response,
+    next: NextFunction) => {
+
     const isRightOTP = compareOTP(verifyOTPReq.id, verifyOTPReq.otp);
     if (!isRightOTP) {
         const _response =

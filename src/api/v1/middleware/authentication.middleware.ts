@@ -6,15 +6,23 @@ const getHeaderAuth = (req: Request) => {
     return req.header('Authorization')?.replace('Bearer ', '');
 }
 
-export const appClientAuthFillter = async (req: Request, res: Response, NextFunction: NextFunction) => {
+export const appClientAuthFillter = async (
+    req: Request,
+    res: Response,
+    NextFunction: NextFunction) => {
     const token = getHeaderAuth(req);
 
     if (!token) {
-        const _response = ResponseBase(ResponseStatus.WRONG_FORMAT,
-            'Request require header Authorization but you missing');
+        const _response =
+            ResponseBase(
+                ResponseStatus.WRONG_FORMAT,
+                'Request require header Authorization but you missing');
         return res.status(400).json(_response);
     }
 
-    JWT.verifyAccessToken(token, res, NextFunction);
+    JWT.verifyAccessToken(
+        token,
+        res,
+        NextFunction);
 }
 

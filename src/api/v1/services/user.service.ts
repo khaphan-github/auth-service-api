@@ -7,31 +7,49 @@ import { ResponseBase, ResponseStatus } from "../payload/Res/response.payload";
 import { getExistUserByUsername } from "../repository/user.repository";
 import { handleSendOTPEmail } from "./otp.service";
 
-export const handleUserRegister = async (user: UserReq, res: Response, next: NextFunction) => {
-    await MemCache.getItemFromCacheBy(CACHENAME.PRIVATEKEY.toString()).then((privateKey) => {
+export const handleUserRegister = async (
+    user: UserReq,
+    res: Response,
+    next: NextFunction) => {
+
+    await MemCache.getItemFromCacheBy(CACHENAME.PRIVATEKEY).then((privateKey) => {
         console.log(user);
         if (privateKey) {
             const decryptData = decryptDataByPrivateKey(user.credential, privateKey);
 
             const responseValidate =
-                verifyUserInput(user.email, user.fullname, decryptData.username, decryptData.password);
+                verifyUserInput(
+                    user.email,
+                    user.fullname,
+                    decryptData.username,
+                    decryptData.password);
+
             if (responseValidate) {
                 return res.status(200).json(responseValidate);
             }
             getExistUserByUsername(decryptData.username).then((existUser) => {
                 if (existUser) {
                     console.log(existUser.username);
-                    const _response = ResponseBase(
-                        ResponseStatus.FAILURE,
-                        'Username already exist - please try again with other username');
+                    const _response =
+                        ResponseBase(
+                            ResponseStatus.FAILURE,
+                            'Username already exist - please try again with other username');
                     return res.status(200).json(_response);
                 }
-                handleSendOTPEmail(decryptData.username, decryptData.password, user.email, user.fullname, res, next);
+                handleSendOTPEmail(
+                    decryptData.username,
+                    decryptData.password,
+                    user.email,
+                    user.fullname,
+                    res,
+                    next);
+
             }).catch((err) => {
-                const _response = ResponseBase(
-                    ResponseStatus.ERROR,
-                    'Query database failure',
-                    err.message);
+                const _response =
+                    ResponseBase(
+                        ResponseStatus.ERROR,
+                        'Query database failure',
+                        err.message);
                 return res.status(500).json(_response);
             });
         }

@@ -36,25 +36,25 @@ const enum TypeVerify {
 export class JWT {
     private static BlackListToken: Map<string, string> = new Map<string, string>();
 
-    private static moveSecretKeytoCache = async () => {
+    private static moveSecretKeytoCache = () => {
         const expriseTime = 60 * 11;
 
-        await MemCache.setItemFromCacheBy(
+        MemCache.setItemFromCacheBy(
             RefreshTokenSecret.PUBLICKEY,
             JWT.getKeyFromFile(RefreshTokenSecret.PUBLICKEY),
             expriseTime);
 
-        await MemCache.setItemFromCacheBy(
+        MemCache.setItemFromCacheBy(
             RefreshTokenSecret.PRIVATEKEY,
             JWT.getKeyFromFile(RefreshTokenSecret.PRIVATEKEY),
             expriseTime);
 
-        await MemCache.setItemFromCacheBy(
+        MemCache.setItemFromCacheBy(
             AccessTokenSecret.PUBLICKEY,
             JWT.getKeyFromFile(AccessTokenSecret.PUBLICKEY),
             expriseTime);
 
-        await MemCache.setItemFromCacheBy(
+        MemCache.setItemFromCacheBy(
             AccessTokenSecret.PRIVATEKEY,
             JWT.getKeyFromFile(AccessTokenSecret.PRIVATEKEY),
             expriseTime);
@@ -74,14 +74,16 @@ export class JWT {
     public static refreshSecretKeyJob() {
         const stateDate = new Date(Date.now());
         const ruleCorn = '*/10  * * * *';
-
+        const jobRule = {
+            start: stateDate,
+            rule: ruleCorn
+        };
         schedule.scheduleJob(
-            {
-                start: stateDate,
-                rule: ruleCorn
-            },
+            jobRule,
             () => {
-                console.log('⚡️ [server - job] Refresh JWT secret key at', Date.now());
+                console.log(
+                    '⚡️ [server - job] Refresh JWT secret key at',
+                    Date.now());
 
                 JWT.moveSecretKeytoCache();
                 JWT.prepareJWTSecret();
@@ -94,13 +96,18 @@ export class JWT {
         tokenPriFileName: string): void => {
 
         const workPath = 'src/api/v1/services/jwt/key';
-        const genPrivateKeyScript = ['ecparam', '-genkey', '-name', 'secp521r1', '-noout', '-out', tokenPriFileName];
-        const genPublicKeyScript = ['ec', '-in', tokenPriFileName, '-pubout', '-out', tokenPubFileName];
 
-        const genPrivateKeyProcess = child_process.spawn(
-            'openssl',
-            genPrivateKeyScript,
-            { cwd: workPath });
+        const genPrivateKeyScript =
+            ['ecparam', '-genkey', '-name', 'secp521r1', '-noout', '-out', tokenPriFileName];
+
+        const genPublicKeyScript =
+            ['ec', '-in', tokenPriFileName, '-pubout', '-out', tokenPubFileName];
+
+        const genPrivateKeyProcess =
+            child_process.spawn(
+                'openssl',
+                genPrivateKeyScript,
+                { cwd: workPath });
 
         genPrivateKeyProcess.on('close', (code) => {
             if (code === 0) {
@@ -123,7 +130,8 @@ export class JWT {
     }
 
     private static generateAccessToken = (payload: JwtPayload) => {
-        const accessTokenPrivateKey = JWT.getKeyFromFile(AccessTokenSecret.PRIVATEKEY);
+        const accessTokenPrivateKey =
+            JWT.getKeyFromFile(AccessTokenSecret.PRIVATEKEY);
 
         const option: SignOptions = {
             jwtid: uuidv4(),
@@ -137,7 +145,8 @@ export class JWT {
     }
 
     private static generateRefreshToken = (payload: JwtPayload) => {
-        const refreshTokenPrivateKey = JWT.getKeyFromFile(RefreshTokenSecret.PRIVATEKEY);
+        const refreshTokenPrivateKey =
+            JWT.getKeyFromFile(RefreshTokenSecret.PRIVATEKEY);
 
         const option: SignOptions = {
             jwtid: uuidv4(),
@@ -178,13 +187,17 @@ export class JWT {
         NextFunction: NextFunction,
         type: TypeVerify) => {
 
-        const errResponse = ResponseBase(ResponseStatus.UNAUTHORIZE, 'Token invalid');
+        const errResponse =
+            ResponseBase(
+                ResponseStatus.UNAUTHORIZE,
+                'Token invalid');
 
         if (err) {
             return res.status(401).json(errResponse)
         }
 
-        const isTokenInBlackList: boolean = JWT.BlackListToken.has((decoded as JWTModel).jti);
+        const isTokenInBlackList: boolean =
+            JWT.BlackListToken.has((decoded as JWTModel).jti);
 
         if (decoded && isTokenInBlackList) {
             const response = ResponseBase(
@@ -211,7 +224,8 @@ export class JWT {
 
             case TypeVerify.Refresh:
                 const payload = decoded as JWTModel;
-                const notBefore: boolean = payload.exp - (Math.floor(Date.now() / 1000)) > 60 * 6; // 6 minutes
+                const beforeTime = payload.exp - (Math.floor(Date.now() / 1000));
+                const notBefore = beforeTime > 60 * 6; // 6 minutes
 
                 if (notBefore) {
                     const response =
@@ -227,7 +241,10 @@ export class JWT {
                         payload.email,
                         payload.name);
 
-                const tokenRes: Token = TokenResponse(tokens.accessToken, tokens.refreshToken);
+                const tokenRes: Token =
+                    TokenResponse(
+                        tokens.accessToken,
+                        tokens.refreshToken);
 
                 const response =
                     ResponseBase(
