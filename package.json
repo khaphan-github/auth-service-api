@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npx tsc",
     "start": "nodemon ./server.ts",
-    "test": "npx jest"
+    "test": "npx jest --runInBand"
   },
   "repository": {
     "type": "git",
@@ -23,6 +23,7 @@
   "homepage": "https://github.com/khaphan-github/WebRTC_NodeJS_BE#readme",
   "dependencies": {
     "@jest/globals": "^29.3.1",
+    "@types/autocannon": "^7.9.0",
     "@types/bcrypt": "^5.0.0",
     "@types/crypto-js": "^4.1.1",
     "@types/express": "^4.17.15",
@@ -33,6 +34,7 @@
     "@types/node-schedule": "^2.1.0",
     "@types/nodemailer": "^6.4.7",
     "@types/uuid": "^9.0.0",
+    "autocannon": "^7.10.0",
     "axios": "^1.2.2",
     "bcrypt": "^5.1.0",
     "body-parser": "^1.20.1",

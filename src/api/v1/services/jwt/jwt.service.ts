@@ -36,149 +36,313 @@ const enum TypeVerify {
 export class JWT {
     private static BlackListToken: Map<string, string> = new Map<string, string>();
 
-    /** Job call every 10 minutes to refresh */
-    public static refreshSecretKeyJob() {
-        schedule.scheduleJob({ start: new Date(Date.now()), rule: '*/10  * * * *' }, () => {
-            console.log('⚡️ [server - job] Refresh JWT secret key at', Date.now());
-            JWT.moveSecretKeytoCache();
-            JWT.prepareJWTSecret();
-            JWT.BlackListToken.clear();
-        });
-    }
-
-    private static moveSecretKeytoCache = async () => {
+    private static moveSecretKeytoCache = () => {
         const expriseTime = 60 * 11;
-        await MemCache.setItemFromCacheBy(RefreshTokenSecret.PUBLICKEY,
-            JWT.getKeyFromFile(RefreshTokenSecret.PUBLICKEY), expriseTime);
 
-        await MemCache.setItemFromCacheBy(RefreshTokenSecret.PRIVATEKEY,
-            JWT.getKeyFromFile(RefreshTokenSecret.PRIVATEKEY), expriseTime);
+        MemCache.setItemFromCacheBy(
+            RefreshTokenSecret.PUBLICKEY,
+            JWT.getKeyFromFile(RefreshTokenSecret.PUBLICKEY),
+            expriseTime);
 
-        await MemCache.setItemFromCacheBy(AccessTokenSecret.PUBLICKEY,
-            JWT.getKeyFromFile(AccessTokenSecret.PUBLICKEY), expriseTime);
+        MemCache.setItemFromCacheBy(
+            RefreshTokenSecret.PRIVATEKEY,
+            JWT.getKeyFromFile(RefreshTokenSecret.PRIVATEKEY),
+            expriseTime);
 
-        await MemCache.setItemFromCacheBy(AccessTokenSecret.PRIVATEKEY,
-            JWT.getKeyFromFile(AccessTokenSecret.PRIVATEKEY), expriseTime);
+        MemCache.setItemFromCacheBy(
+            AccessTokenSecret.PUBLICKEY,
+            JWT.getKeyFromFile(AccessTokenSecret.PUBLICKEY),
+            expriseTime);
+
+        MemCache.setItemFromCacheBy(
+            AccessTokenSecret.PRIVATEKEY,
+            JWT.getKeyFromFile(AccessTokenSecret.PRIVATEKEY),
+            expriseTime);
     }
 
     private static prepareJWTSecret = () => {
-        JWT.generateKeyByShellScript(AccessTokenSecret.PUBLICKEY, AccessTokenSecret.PRIVATEKEY);
-        JWT.generateKeyByShellScript(RefreshTokenSecret.PUBLICKEY, RefreshTokenSecret.PRIVATEKEY);
+        JWT.generateKeyByShellScript(
+            AccessTokenSecret.PUBLICKEY,
+            AccessTokenSecret.PRIVATEKEY);
+
+        JWT.generateKeyByShellScript(
+            RefreshTokenSecret.PUBLICKEY,
+            RefreshTokenSecret.PRIVATEKEY);
     }
 
-    private static generateKeyByShellScript = (tokenPublic: string, tokenPrivate: string) => {
+    /** Job call every 10 minutes to refresh */
+    public static refreshSecretKeyJob() {
+        const stateDate = new Date(Date.now());
+        const ruleCorn = '*/10  * * * *';
+        const jobRule = {
+            start: stateDate,
+            rule: ruleCorn
+        };
+        schedule.scheduleJob(
+            jobRule,
+            () => {
+                console.log(
+                    '⚡️ [server - job] Refresh JWT secret key at',
+                    Date.now());
+
+                JWT.moveSecretKeytoCache();
+                JWT.prepareJWTSecret();
+                JWT.BlackListToken.clear();
+            });
+    }
+
+    private static generateKeyByShellScript = (
+        tokenPubFileName: string,
+        tokenPriFileName: string): void => {
+
         const workPath = 'src/api/v1/services/jwt/key';
+
+        const genPrivateKeyScript =
+            ['ecparam', '-genkey', '-name', 'secp521r1', '-noout', '-out', tokenPriFileName];
+
+        const genPublicKeyScript =
+            ['ec', '-in', tokenPriFileName, '-pubout', '-out', tokenPubFileName];
+
         const genPrivateKeyProcess =
-            child_process.spawn('openssl',
-                ['ecparam', '-genkey', '-name', 'secp521r1', '-noout', '-out', tokenPrivate],
-                { cwd: workPath }
-            );
+            child_process.spawn(
+                'openssl',
+                genPrivateKeyScript,
+                { cwd: workPath });
 
         genPrivateKeyProcess.on('close', (code) => {
             if (code === 0) {
-                child_process.spawn('openssl', ['ec', '-in', tokenPrivate, '-pubout', '-out', tokenPublic],
-                    { cwd: workPath }
-                );
+                child_process.spawn(
+                    'openssl',
+                    genPublicKeyScript,
+                    { cwd: workPath });
             };
         });
     }
 
-    private static getKeyFromFile(filePath: string): string {
-        const rootPath = './src/api/v1/services/jwt/key/';
-        return fs.readFileSync(rootPath + filePath, { encoding: 'utf8', flag: 'r' });
+    private static getKeyFromFile(fileName: string): string {
+        const filePath = './src/api/v1/services/jwt/key/' + fileName;
+        return fs.readFileSync(
+            filePath,
+            {
+                encoding: 'utf8',
+                flag: 'r'
+            });
     }
 
     private static generateAccessToken = (payload: JwtPayload) => {
-        const accessTokenPrivateKey = JWT.getKeyFromFile(AccessTokenSecret.PRIVATEKEY);
+        const accessTokenPrivateKey =
+            JWT.getKeyFromFile(AccessTokenSecret.PRIVATEKEY);
+
         const option: SignOptions = {
             jwtid: uuidv4(),
             algorithm: 'ES512',
             expiresIn: 60 * 5, // 5 minutes
         }
-        return jwt.sign(payload, accessTokenPrivateKey, option);
+        return jwt.sign(
+            payload,
+            accessTokenPrivateKey,
+            option);
     }
 
     private static generateRefreshToken = (payload: JwtPayload) => {
-        const refreshTokenPrivateKey = JWT.getKeyFromFile(RefreshTokenSecret.PRIVATEKEY);
+        const refreshTokenPrivateKey =
+            JWT.getKeyFromFile(RefreshTokenSecret.PRIVATEKEY);
+
         const option: SignOptions = {
             jwtid: uuidv4(),
             algorithm: 'ES512',
             expiresIn: 60 * 10, // 10 minutes
         }
-        return jwt.sign(payload, refreshTokenPrivateKey, option);
+        return jwt.sign(
+            payload,
+            refreshTokenPrivateKey,
+            option);
     }
 
-    public static initTokenKeypair = (userID: string, email: string, fullName: string): TokenKeypairModel => {
+    public static initTokenKeypair = (
+        userID: string,
+        email: string,
+        fullName: string): TokenKeypairModel => {
+
         const payload: JwtPayload = {
             sub: userID,
             scope: 'user',
             email: email,
             name: fullName,
         };
+
         const tokenKeypair: TokenKeypairModel = {
             accessToken: JWT.generateAccessToken(payload),
             refreshToken: JWT.generateRefreshToken(payload),
         };
+
         return tokenKeypair;
     }
 
-    private static handleJWTBase = (token: string, err: VerifyErrors | null, decoded: string | jwt.JwtPayload | jwt.Jwt | undefined, res: Response, NextFunction: NextFunction, type: TypeVerify) => {
-        const errResponse = ResponseBase(ResponseStatus.FORBIDDENT, 'Token invalid');
+    private static handleJWTBase = (
+        token: string,
+        err: VerifyErrors | null,
+        decoded: string | jwt.JwtPayload | jwt.Jwt | undefined,
+        res: Response,
+        NextFunction: NextFunction,
+        type: TypeVerify) => {
 
-        if (err) { return res.status(401).json(errResponse) }
-        if (decoded && JWT.BlackListToken.has((decoded as JWTModel).jti)) {
-            return res.status(401).json(ResponseBase(ResponseStatus.FORBIDDENT, 'Token is blocked'));
-        };
+        const errResponse =
+            ResponseBase(
+                ResponseStatus.UNAUTHORIZE,
+                'Token invalid');
+
+        if (err) {
+            return res.status(401).json(errResponse)
+        }
+
+        const isTokenInBlackList: boolean =
+            JWT.BlackListToken.has((decoded as JWTModel).jti);
+
+        if (decoded && isTokenInBlackList) {
+            const response = ResponseBase(
+                ResponseStatus.FORBIDDENT,
+                'Token is blocked');
+            return res.status(403).json(response);
+        }
 
         if (type != TypeVerify.Access) {
-            JWT.BlackListToken.set((decoded as JWTModel).jti, token);
+            const tokenId = (decoded as JWTModel).jti;
+            JWT.BlackListToken.set(tokenId, token);
         }
+
         switch (type) {
             case TypeVerify.Access:
                 NextFunction();
                 break;
 
             case TypeVerify.SignOut:
-                console.log(token)
-                return res.status(200).json(ResponseBase(ResponseStatus.SUCCESS, 'Sign out success'));
+                const respose = ResponseBase(
+                    ResponseStatus.SUCCESS,
+                    'Sign out success');
+                return res.status(200).json(respose);
 
             case TypeVerify.Refresh:
                 const payload = decoded as JWTModel;
-                const notBefore: boolean = payload.exp - (Math.floor(Date.now() / 1000)) > 60 * 6; // 6 minutes
+                const beforeTime = payload.exp - (Math.floor(Date.now() / 1000));
+                const notBefore = beforeTime > 60 * 6; // 6 minutes
+
                 if (notBefore) {
-                    return res.status(401).json(ResponseBase(ResponseStatus.FORBIDDENT, 'Token not active'));
+                    const response =
+                        ResponseBase(
+                            ResponseStatus.FORBIDDENT,
+                            'Token not active');
+                    return res.status(403).json(response);
                 }
-                const tokens = JWT.initTokenKeypair(payload.sub, payload.email, payload.name);
-                const tokenRes: Token = TokenResponse(tokens.accessToken, tokens.refreshToken);
-                return res.status(200).json(ResponseBase(ResponseStatus.SUCCESS, 'Refresh token success', tokenRes));
+
+                const tokens =
+                    JWT.initTokenKeypair(
+                        payload.sub,
+                        payload.email,
+                        payload.name);
+
+                const tokenRes: Token =
+                    TokenResponse(
+                        tokens.accessToken,
+                        tokens.refreshToken);
+
+                const response =
+                    ResponseBase(
+                        ResponseStatus.SUCCESS,
+                        'Refresh token success',
+                        tokenRes);
+
+                return res.status(200).json(response);
         }
     }
-    private static verifyToken = (token: string, key: string, res: Response, NextFunction: NextFunction, type: TypeVerify) => {
+
+    private static verifyToken = async (
+        token: string,
+        key: string,
+        res: Response,
+        NextFunction: NextFunction,
+        type: TypeVerify) => {
+
         const keyFromFile = JWT.getKeyFromFile(key);
-        const option: VerifyOptions = { algorithms: ['ES512'] }
+        const option: VerifyOptions = { algorithms: ['ES512'] };
 
-        jwt.verify(token, keyFromFile, option, async (err, decoded) => {
-            if (err?.name === 'JsonWebTokenError') {
-                const keyFromCache = await MemCache.getItemFromCacheBy(key);
-                if (!keyFromCache) {
-                    return res.status(401).json(ResponseBase(ResponseStatus.FORBIDDENT, 'Token invalid'));
+        jwt.verify(
+            token,
+            keyFromFile,
+            option,
+            async (err, decoded) => {
+                if (err?.name === 'JsonWebTokenError') {
+                    const keyFromCache = await MemCache.getItemFromCacheBy(key);
+
+                    if (!keyFromCache) {
+                        const respose = ResponseBase(
+                            ResponseStatus.FORBIDDENT,
+                            'Token invalid');
+                        return res.status(403).json(respose);
+                    }
+
+                    jwt.verify(
+                        token,
+                        keyFromCache,
+                        option,
+                        (err, decoded) => {
+                            return JWT.handleJWTBase(
+                                token,
+                                err,
+                                decoded,
+                                res,
+                                NextFunction,
+                                type);
+                        });
                 }
-                jwt.verify(token, keyFromCache, option, (err, decoded) => {
-                    return JWT.handleJWTBase(token, err, decoded, res, NextFunction, type);
-                });
-            }
-            return JWT.handleJWTBase(token, err, decoded, res, NextFunction, type);
-        });
+                return JWT.handleJWTBase(
+                    token,
+                    err,
+                    decoded,
+                    res,
+                    NextFunction,
+                    type);
+            });
     }
 
-    public static verifyAccessToken = (accessToken: string, res: Response, NextFunction: NextFunction) => {
-        JWT.verifyToken(accessToken, AccessTokenSecret.PUBLICKEY, res, NextFunction, TypeVerify.Access);
+    public static verifyAccessToken = (
+        accessToken: string,
+        res: Response,
+        NextFunction: NextFunction) => {
+
+        JWT.verifyToken(
+            accessToken,
+            AccessTokenSecret.PUBLICKEY,
+            res,
+            NextFunction,
+            TypeVerify.Access
+        );
     }
 
-    public static HandleUserRefreshToken = (refreshTokenReq: RefreshTokenReq, res: Response, NextFunction: NextFunction) => {
-        JWT.verifyToken(refreshTokenReq.refreshToken, RefreshTokenSecret.PUBLICKEY, res, NextFunction, TypeVerify.Refresh);
+
+    public static HandleUserRefreshToken = (
+        refreshTokenReq: RefreshTokenReq,
+        res: Response,
+        NextFunction: NextFunction) => {
+
+        return JWT.verifyToken(
+            refreshTokenReq.refreshToken,
+            RefreshTokenSecret.PUBLICKEY,
+            res,
+            NextFunction,
+            TypeVerify.Refresh);
     }
-    public static handleUserSignOut = (req: RefreshTokenReq, res: Response, NextFunction: NextFunction) => {
-        JWT.verifyToken(req.refreshToken, RefreshTokenSecret.PUBLICKEY, res, NextFunction, TypeVerify.SignOut);
+
+    public static handleUserSignOut = (
+        req: RefreshTokenReq,
+        res: Response,
+        NextFunction: NextFunction) => {
+
+        return JWT.verifyToken(
+            req.refreshToken,
+            RefreshTokenSecret.PUBLICKEY,
+            res,
+            NextFunction,
+            TypeVerify.SignOut);
     }
 }

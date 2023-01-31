@@ -4,6 +4,7 @@ dotenv.config();
 
 const MONGODB_USERNAME = process.env.MONGODB_USERNAME || '';
 const MONGODB_PASSWORD = process.env.MONGODB_PASSWORD || '';
+
 const MONGODB_URL = `mongodb+srv://
 ${MONGODB_USERNAME}:${MONGODB_PASSWORD}
 @clusternvirginia.6dnisja.mongodb.net/webrtc`;
@@ -24,9 +25,6 @@ export const serverConfig = {
   },
   api: {
     path: API_PATH
-  },
-  memoryCache: {
-
   },
   mailServer: {
     username: MAIL_USERNAME,

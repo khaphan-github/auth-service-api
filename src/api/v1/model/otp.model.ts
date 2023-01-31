@@ -24,6 +24,6 @@ export const DefaultOTP = (_id:string,otp: string, email: string, expriseMinutes
     return OTP;
 }
 
-export const AddMinutesToDate = (date:Date, minutes: number) => {
+const AddMinutesToDate = (date:Date, minutes: number) => {
     return new Date(date.getTime() + minutes * 60000);
 }
