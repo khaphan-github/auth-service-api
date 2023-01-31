@@ -21,7 +21,7 @@ const reqDecript = (data: string, Privatekey: string) => {
     return keyPrivate.decrypt(data, 'utf8');
 }
 
-export const decryptUsernamePassword = (data: string, Privatekey: string): Credentials => {
+export const decryptDataByPrivateKey = (data: string, Privatekey: string): Credentials => {
     const decryptedData = reqDecript(data, Privatekey);
     return JSON.parse(decryptedData);
 }

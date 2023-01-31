@@ -25,7 +25,7 @@ describe('User_Authentication_interation_testing', () => {
             '91ddOvpv4cgawmOkJNgUlFZ3hs12n+WlE1+uFvnDVEpsVtZ9FKoOcg/UxMml2h6+Arx5JuWlQir1FP26N97V8P4O73yxDtZ/cc=';
 
         const _config = requestConfig({
-            "credential": credential
+            'credential': credential
         });
 
         await axios(_config).then((response) => {
@@ -41,7 +41,7 @@ describe('User_Authentication_interation_testing', () => {
             '91ddOvpv4cgawmOkJNgUlFZ3hs12n+WlE1+uFvnDVEpsVtZ9FKoOcg/UxMml97V8P4O73yxDtZ/cc=';
 
         const _config = requestConfig({
-            "credential": credential
+            'credential': credential
         });
 
         const expectedMessage = 'Error during decryption (probably incorrect key).' +
@@ -51,27 +51,13 @@ describe('User_Authentication_interation_testing', () => {
             expect(response.data.status).toMatch('WRONG_FORMAT');
             expect(response.data.message).toMatch(expectedMessage);
         })
-
     });
 
-    test('TestUserAuthenticate_WhenGivenEmptyCredential_Does', async () => {
-       
-    });
-    test('TestUserAuthenticate_WhenGivenEmptyUserNameInCredential_Does', async () => {
-       
-    });
-    
-    test('TestUserAuthenticate_WhenGivenEmptyPasswordInCredential_Does', async () => {
-       
-    });
-    test('TestUserAuthenticate_WhenGivenEmptyBothUserNameAndPasswordInCredential_Does', async () => {
-       
-    });
-    test('TestUserAuthenticate_WhenGivenEmplyUserNameInCredential_Does', async () => {
-       
-    });
-    test('TestUserAuthenticate_WhenGivenEmplyUserNameInCredential_Does', async () => {
-       
+    test('TestUserAuthenticate_WhenGivenEmptyCredential_DoesStatusWrongFormat', async () => {
+        const _config = requestConfig({});
+        await axios(_config).then((response) => {
+            expect(response.data.status).toMatch('WRONG_FORMAT');
+        })
     });
 })
 
@@ -88,8 +74,8 @@ describe('User sign out test', () => {
     }
     test('Should receive FORBIDDENT when given invalid refresh token', async () => {
         const _config = config(JSON.stringify({
-            "accessToken": "eyJhbGciOiJFUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2M2JlYmJkYmY1MWJhNTllMWRkYzFlZTUiLCJzY29wZSI6InVzZXIiLCJlbWFpbCI6InBoYW5ob2FuZ2toYTAxQGdtYWlsLmNvbSIsIm5hbWUiOiJMZSBEbyBUaGFuaCBEYXQiLCJpYXQiOjE2NzM5Njc0MTMsImV4cCI6MTY3Mzk2NzcxMywianRpIjoiNjkxNDRiNmMtNjM2YS00NjdhLThjNzktNjRkYjI3MGVmYWE0In0.ACcMRGPpT7mv09VwWbQZ4AVsUDXomCgLRBkEEeLSVeKwIhmPS6yN9qoWk8vh_3-KQJmPDT16tuLmlbG1N_J6X9A0AaTiTv2ia-S1ZbqxujIabUGXyBygF30J227QrOyjNzwJa203DYggQOuDuVDPMLDmz6Aua6Zx6-_eRUEk5ekEvv85",
-            "refreshToken": "eyJhbGciOiJFUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2M2JlYmJkYmY1MWJhNTllMWRkYzFlZTUiLCJzY29wZSI6InVzZXIiLCJlbWFpbCI6InBoYW5ob2FuZ2toYTAxQGdtYWlsLmNvbSIsIm5hbWUiOiJMZSBEbyBUaGFuaCBEYXQiLCJpYXQiOjE2NzM5Njc0MTMsImV4cCI6MTY3Mzk2ODAxMywianRpIjoiOWExZmY0MzktMjlmYi00Nzc0LTkxYzMtNWEwNGQ3YWY5Nzc3In0.AFwgcfek3kmnfJOW2JqVuJ5Tnx77m01F5NdRjhWVgMYxy9f0L1bFGMDwqMC9LeLceETAxoA6NVzqeewJBBW-u4dBAW53TO9XHJWfpMCaIuHOKImnlSz-TsjyHzhR1gEq75cSIH9Y2H9O2GtLFJ59p0bSDfFcGWFDrxrhaMuGNe22L0t_"
+            'accessToken': 'eyJhbGciOiJFUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2M2JlYmJkYmY1MWJhNTllMWRkYzFlZTUiLCJzY29wZSI6InVzZXIiLCJlbWFpbCI6InBoYW5ob2FuZ2toYTAxQGdtYWlsLmNvbSIsIm5hbWUiOiJMZSBEbyBUaGFuaCBEYXQiLCJpYXQiOjE2NzM5Njc0MTMsImV4cCI6MTY3Mzk2NzcxMywianRpIjoiNjkxNDRiNmMtNjM2YS00NjdhLThjNzktNjRkYjI3MGVmYWE0In0.ACcMRGPpT7mv09VwWbQZ4AVsUDXomCgLRBkEEeLSVeKwIhmPS6yN9qoWk8vh_3-KQJmPDT16tuLmlbG1N_J6X9A0AaTiTv2ia-S1ZbqxujIabUGXyBygF30J227QrOyjNzwJa203DYggQOuDuVDPMLDmz6Aua6Zx6-_eRUEk5ekEvv85',
+            'refreshToken': 'eyJhbGciOiJFUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2M2JlYmJkYmY1MWJhNTllMWRkYzFlZTUiLCJzY29wZSI6InVzZXIiLCJlbWFpbCI6InBoYW5ob2FuZ2toYTAxQGdtYWlsLmNvbSIsIm5hbWUiOiJMZSBEbyBUaGFuaCBEYXQiLCJpYXQiOjE2NzM5Njc0MTMsImV4cCI6MTY3Mzk2ODAxMywianRpIjoiOWExZmY0MzktMjlmYi00Nzc0LTkxYzMtNWEwNGQ3YWY5Nzc3In0.AFwgcfek3kmnfJOW2JqVuJ5Tnx77m01F5NdRjhWVgMYxy9f0L1bFGMDwqMC9LeLceETAxoA6NVzqeewJBBW-u4dBAW53TO9XHJWfpMCaIuHOKImnlSz-TsjyHzhR1gEq75cSIH9Y2H9O2GtLFJ59p0bSDfFcGWFDrxrhaMuGNe22L0t_'
         }))
         await axios(_config).then((response) => {
             expect(response.data.status).toMatch('FORBIDDENT');
